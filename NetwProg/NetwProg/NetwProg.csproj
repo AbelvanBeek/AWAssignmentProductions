@@ -43,6 +43,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Connection.cs" />
     <Compile Include="Data.cs" />
     <Compile Include="NDisEntry.cs" />
     <Compile Include="Program.cs" />

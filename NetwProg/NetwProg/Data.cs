@@ -20,9 +20,37 @@ namespace NetwProg
         public static void AddDisEntry(int goal, int dist)
         {
             dis.Add(new int[2] { goal, dist });
-
             //NOTIFY CODE HERE
+        }
+        public static void AddNDisEntry(int goal, int dist)
+        {
+            NDisEntry entry = new NDisEntry(goal);
+            //entry.AddPath()
+            ndis.Add(entry);
+            //NOTIFY CODE HERE
+        }
+        static List<int> returnNeighbours()
+        {
+            //get list of neigbours form ndisentries
+            if (ndis.Count > 0)
+                return ndis[0].returnAllNB();
+            else
+                return null;
+        }
+        public static bool contains(int port)
+        {
+            //check if the port is in the returnNeighbours.
+            List<int> nb = returnNeighbours();
+            return nb.Contains(port);
+        }
+        public static void printRoutingTable()
+        {
 
+            Console.WriteLine(dis[0][0] + " " + dis[0][1] + " local");
+            foreach (NDisEntry entry in ndis)
+            {
+                entry.print();
+            }
         }
     }
 
