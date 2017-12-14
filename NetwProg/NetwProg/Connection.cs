@@ -9,15 +9,18 @@ using System.Threading.Tasks;
 
 namespace NetwProg
 {
-    class Connection
+    public class Connection
     {
         public StreamReader Read;
         public StreamWriter Write;
+        TcpClient client;
+        int port;
 
         // Connection heeft 2 constructoren: deze constructor wordt gebruikt als wij CLIENT worden bij een andere SERVER
         public Connection(int port)
         {
-            TcpClient client = new TcpClient("localhost", port);
+            this.port = port;
+            client = new TcpClient("localhost", port);
             Read = new StreamReader(client.GetStream());
             Write = new StreamWriter(client.GetStream());
             Write.AutoFlush = true;
@@ -27,7 +30,10 @@ namespace NetwProg
 
             // Start het reader-loopje
             new Thread(ReaderThread).Start();
-            Program.connections.Add(port, this);
+            Data.connections.Add(port, this);
+            Console.WriteLine("Verbonden: " + port);
+            Data.AddNDisEntry(port, 1);
+            Console.WriteLine(port);
         }
 
         // Deze constructor wordt gebruikt als wij SERVER zijn en een CLIENT maakt met ons verbinding
@@ -54,6 +60,11 @@ namespace NetwProg
             {
                 Console.WriteLine("No Connection Found");
             } // Verbinding is kennelijk verbroken
+        }
+        public void Close()
+        {
+            Console.WriteLine("Verbroken: " + port);
+            client.Close();
         }
     }
 }

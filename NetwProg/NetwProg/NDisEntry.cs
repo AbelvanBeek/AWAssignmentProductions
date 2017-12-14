@@ -9,11 +9,12 @@ namespace NetwProg
     public class NDisEntry
     {
         int goal;
-        List<int[]> disViaNb;
+        List<int[]> disViaNb = new List<int[]>();
 
         public NDisEntry(int goal)
         {
             this.goal = goal;
+            AddPath(goal, 1);
         }
 
         public void AddPath(int nb, int dist)

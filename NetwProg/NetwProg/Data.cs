@@ -16,6 +16,7 @@ namespace NetwProg
 
         public static List<NDisEntry> ndis = new List<NDisEntry>();
         public static List<int[]> dis = new List<int[]>();
+        public static Dictionary<int, Connection> connections = new Dictionary<int, Connection>();
 
         public static void AddDisEntry(int goal, int dist)
         {
@@ -29,7 +30,7 @@ namespace NetwProg
             ndis.Add(entry);
             //NOTIFY CODE HERE
         }
-        static List<int> returnNeighbours()
+        public static List<int> returnNeighbours()
         {
             //get list of neigbours form ndisentries
             if (ndis.Count > 0)
@@ -41,6 +42,8 @@ namespace NetwProg
         {
             //check if the port is in the returnNeighbours.
             List<int> nb = returnNeighbours();
+            if (nb == null)
+                return false;
             return nb.Contains(port);
         }
         public static void printRoutingTable()
