@@ -53,7 +53,11 @@ namespace NetwProg
             try
             {
                 while (true)
-                    Console.WriteLine(Read.ReadLine());
+                {
+                    string input = Read.ReadLine();
+                    Console.WriteLine(input);
+                    ParseInput(input);
+                }
                 //hier iets doen als shit veranderd
             }
             catch
@@ -65,6 +69,61 @@ namespace NetwProg
         {
             Console.WriteLine("Verbroken: " + port);
             client.Close();
+        }
+        public static void ParseInput(string inp)
+        {
+            string[] input = inp.Split();
+            string rest = "";
+            for (int i = 2; i < input.Length; i++)
+                rest += input[i] + " ";
+
+            int newport;
+            switch (input[0])
+            {
+                case "R":
+                    Data.printRoutingTable();
+                    break;
+                case "B":
+                    //Stuur bericht
+                    newport = int.Parse(input[1]);
+                    if (!Data.returnNeighbours().Contains(newport))
+                    {
+                        //stuur door naar dichstbijzijnde buur.
+                    }
+                    try
+                    {
+                        Connection connection = Data.connections[newport];
+                        connection.Write.WriteLine(rest);
+                    }
+                    catch
+                    {
+                        Console.WriteLine("Poort " + newport + " is niet bekend");
+                    }
+                    break;
+                case "C":
+                    //maak connection
+                    newport = int.Parse(input[1]);
+                    if (!Data.contains(newport))
+                    {
+                        Connection newConnection = new Connection(newport);
+                    }
+                    break;
+                case "D":
+                    newport = int.Parse(input[1]);
+                    try
+                    {
+                        Data.connections[newport].Close();
+                        Data.connections.Remove(newport);
+                    }
+                    catch
+                    {
+                        Console.WriteLine("Poort " + newport + " is niet bekend");
+                    }
+                    break;
+                default:
+                    //
+                    break;
+            }
         }
     }
 }
