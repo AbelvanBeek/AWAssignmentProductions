@@ -8,42 +8,47 @@ namespace NetwProg
 {
     public class NDisEntry
     {
-        int goal;
-        List<int[]> disViaNb = new List<int[]>();
+        public int goal;
+        Dictionary<int, int> disViaNb = new Dictionary<int, int>();
 
         public NDisEntry(int goal)
         {
             this.goal = goal;
-            AddPath(goal, 1);
         }
 
         public void AddPath(int nb, int dist)
         {
-            disViaNb.Add(new int[2] { nb, dist });
+            if (disViaNb.ContainsKey(nb))
+                disViaNb[nb] = dist;
+            else
+                disViaNb.Add(nb, dist);
         }
+
         public List<int> returnAllNB()
         {
             List<int> temp = new List<int>();
-            foreach (int[] tuple in disViaNb)
+            foreach (KeyValuePair<int, int> tuple in disViaNb)
             {
-                temp.Add(tuple[0]);
+                temp.Add(tuple.Key);
             }
             return temp;
         }
+
         public void print()
         {
-            int[] tuple = getShortestNdis();
-            Console.WriteLine(goal + " " + tuple[1] + " " + tuple[0]);
+            KeyValuePair<int,int> tuple = getShortestNdis();
+            Console.WriteLine(goal + " " + tuple.Value + " " + tuple.Key);
         }
-        public int[] getShortestNdis()
+        public KeyValuePair<int, int> getShortestNdis()
         {
+            //NDIS KAN LEEG ZIJN, DAN FUCKT ALLES
             int value = int.MaxValue;
-            int[] temp = new int[2];
-            foreach (int[] tuple in disViaNb)
+            KeyValuePair<int,int> temp = new KeyValuePair<int, int>();
+            foreach (KeyValuePair<int,int> tuple in disViaNb)
             {
-                if (tuple[1] < value)
+                if (tuple.Value < value)
                 {
-                    value = tuple[1];
+                    value = tuple.Value;
                     temp = tuple;
                 }
             }

@@ -32,8 +32,6 @@ namespace NetwProg
             new Thread(ReaderThread).Start();
             Data.connections.Add(port, this);
             Console.WriteLine("Verbonden: " + port);
-            Data.AddNDisEntry(port, 1);
-            Console.WriteLine(port);
         }
 
         // Deze constructor wordt gebruikt als wij SERVER zijn en een CLIENT maakt met ons verbinding
@@ -103,9 +101,11 @@ namespace NetwProg
                 case "C":
                     //maak connection
                     newport = int.Parse(input[1]);
-                    if (!Data.contains(newport))
+                    if (!Data.connections.ContainsKey(newport))
                     {
                         Connection newConnection = new Connection(newport);
+                        //DIT HIERONDER KAN TEMP ZIJN NU WE NOG MET C EEN CONNECTION MAKEN
+                        Data.AddNDisEntry(newport, 0);
                     }
                     break;
                 case "D":
@@ -119,6 +119,10 @@ namespace NetwProg
                     {
                         Console.WriteLine("Poort " + newport + " is niet bekend");
                     }
+                    break;
+                case "U":
+                    //Eerst ndis updaten en dan recompute
+                    Data.AddNDisEntry(int.Parse(input[1]), int.Parse(input[2]));
                     break;
                 default:
                     //

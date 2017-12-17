@@ -25,11 +25,13 @@ namespace NetwProg
             string[] input = Console.ReadLine().Split();
             Console.Title = "NetChange " + input[0];
             port = int.Parse(input[0]);
-            Data.dis.Add(new int[2] { int.Parse(input[0]), 0});
+            Data.dis.Add(int.Parse(input[0]), 0);
             for (int i = 1; i < input.Length; i++)
             {
                 int nbport = int.Parse(input[i]);
-                Data.AddDisEntry(nbport, 1);
+                //Connection newConnection = new Connection(nbport);
+                Data.AddNDisEntry(nbport);
+                Data.ndis.
             }
         }
         static void CreateInputThread()
