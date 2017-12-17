@@ -14,7 +14,7 @@ namespace NetwProg
          * dis bevat op index 0: doelrouter, 1: geschatte minimale distance uit ndis + 1
          */
 
-        public static List<NDisEntry> ndis = new List<NDisEntry>();
+        public static Dictionary<int,NDisEntry> ndis = new Dictionary<int, NDisEntry>();
         public static Dictionary<int, int> dis = new Dictionary<int, int>();
         public static Dictionary<int, Connection> connections = new Dictionary<int, Connection>();
 
@@ -30,12 +30,11 @@ namespace NetwProg
             if (!ContainsNDis(goal))
             {
                 NDisEntry entry = new NDisEntry(goal);
-                ndis.Add(entry);
+                ndis.Add(goal, entry);
                 Recompute();
             }
             else
             {
-                //ndis[goal].AddPath()
                 Console.WriteLine("Adding to NDIS failed: already in NDIS");
             }
         }
@@ -44,16 +43,16 @@ namespace NetwProg
         {
             //get list of neigbours from ndisentries
             if (ndis.Count > 0)
-                return ndis[0].returnAllNB();
+                return ndis[Program.port].returnAllNB();
             else
                 return null;
         }
 
         public static bool ContainsNDis(int goal)
         {
-            foreach (NDisEntry entry in ndis)
+            foreach (KeyValuePair<int,NDisEntry> entry in ndis)
             {
-                if (entry.goal == goal)
+                if (entry.Key == goal)
                     return true;
             }
             return false;
@@ -71,13 +70,20 @@ namespace NetwProg
 
         public static void Recompute()
         {
-            foreach (NDisEntry entry in ndis)
+            foreach (KeyValuePair<int, NDisEntry> entry in ndis)
             {
                 //all goals in ndis, check if its there, if so, check if it has changed 
                     //--> if so, change to smallest value and send message to neighbours, otherwise, skip
 
-                int goal = entry.goal;
-                int shortestDist = entry.getShortestNdis().Value;
+                int goal = entry.Key;
+                int shortestDist = entry.Value.getShortestNdis().Value;
+
+                if (goal == Program.port)
+                {
+                    if (dis.ContainsKey(goal))
+                        continue;
+                    dis.Add(goal, 0);
+                }
 
                 if (dis.ContainsKey(goal))
                 {
@@ -85,14 +91,14 @@ namespace NetwProg
                     {
                         dis[goal] = shortestDist;
                         //send message to all neighbours that value for goal has changed
-                        sendMessageToAllNeighbours(goal, shortestDist);
+                        sendMessageToAllNeighbours(goal, (shortestDist + 1));
                     }
                 }
                 else
                 {
                     dis.Add(goal, shortestDist);
                     //send message to all neighbours
-                    sendMessageToAllNeighbours(goal, shortestDist);
+                    sendMessageToAllNeighbours(goal, (shortestDist + 1));
                 }
             }
         }
@@ -107,7 +113,7 @@ namespace NetwProg
                     try
                     {
                         Connection connection = Data.connections[neigb];
-                        connection.Write.WriteLine("U " + goal + " " + dist);
+                        connection.Write.WriteLine("U " + goal + " " + dist + " " + Program.port);
                     }
                     catch
                     {
@@ -121,9 +127,9 @@ namespace NetwProg
         {
             
             Console.WriteLine(Program.port + " " + 0 + " local");
-            foreach (NDisEntry entry in ndis)
+            foreach (KeyValuePair<int, NDisEntry> entry in ndis)
             {
-                entry.print();
+                entry.Value.print();
             }
         }
     }

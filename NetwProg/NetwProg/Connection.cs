@@ -105,7 +105,8 @@ namespace NetwProg
                     {
                         Connection newConnection = new Connection(newport);
                         //DIT HIERONDER KAN TEMP ZIJN NU WE NOG MET C EEN CONNECTION MAKEN
-                        Data.AddNDisEntry(newport, 0);
+                        Data.AddNDisEntry(newport);
+                        Data.ndis[newport].AddPath(newport, 0);
                     }
                     break;
                 case "D":
@@ -122,7 +123,10 @@ namespace NetwProg
                     break;
                 case "U":
                     //Eerst ndis updaten en dan recompute
-                    Data.AddNDisEntry(int.Parse(input[1]), int.Parse(input[2]));
+                    newport = int.Parse(input[1]);
+                    Data.AddNDisEntry(newport);
+                    //Dit fuckt, ik zeg het je
+                    Data.ndis[newport].AddPath(int.Parse(input[3]), int.Parse(input[2]));
                     break;
                 default:
                     //
