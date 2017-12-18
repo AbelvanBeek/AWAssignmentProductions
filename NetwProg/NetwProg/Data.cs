@@ -117,7 +117,7 @@ namespace NetwProg
                     }
                     catch
                     {
-                        Console.WriteLine("Deze man heeft nog geen connection: " + neigb);
+                        Console.WriteLine("Send message to neighbour: " + neigb + " failed, no direct connection with neighbour");
                     }
                 }
             }

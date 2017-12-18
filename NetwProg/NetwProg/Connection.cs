@@ -84,19 +84,35 @@ namespace NetwProg
                 case "B":
                     //Stuur bericht
                     newport = int.Parse(input[1]);
-                    if (!Data.returnNeighbours().Contains(newport))
+                    if (!Data.connections.ContainsKey(newport))
                     {
                         //stuur door naar dichstbijzijnde buur.
+                        try
+                        {
+                            int vianb = Data.ndis[newport].getShortestNdis().Key;
+                            Console.WriteLine("Via deze kortste pad naar " + newport + " via " + vianb);
+                            Data.connections[vianb].Write.WriteLine("B " + newport + " " + rest);
+                        }
+                        catch(Exception e)
+                        {
+                            Console.WriteLine(e);
+                            Console.WriteLine("Tried to forward message " + rest + " to " + newport + " but failed");
+                        }
+
                     }
-                    try
+                    else
                     {
-                        Connection connection = Data.connections[newport];
-                        connection.Write.WriteLine(rest);
+                        try
+                        {
+                            Connection connection = Data.connections[newport];
+                            connection.Write.WriteLine(rest);
+                        }
+                        catch
+                        {
+                            Console.WriteLine("Poort " + newport + " is niet bekend");
+                        }
                     }
-                    catch
-                    {
-                        Console.WriteLine("Poort " + newport + " is niet bekend");
-                    }
+
                     break;
                 case "C":
                     //maak connection
