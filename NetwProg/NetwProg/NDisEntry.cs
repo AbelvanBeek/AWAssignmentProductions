@@ -22,6 +22,8 @@ namespace NetwProg
                 disViaNb[nb] = dist;
             else
                 disViaNb.Add(nb, dist);
+
+            Data.Recompute();
         }
 
         public List<int> returnAllNB()
@@ -36,8 +38,13 @@ namespace NetwProg
 
         public void print()
         {
+            if (goal == Program.port)
+                Console.WriteLine(goal + " 0 local");
+            else
+            {
             KeyValuePair<int,int> tuple = getShortestNdis();
             Console.WriteLine(goal + " " + tuple.Value + " " + tuple.Key);
+            }
         }
         public KeyValuePair<int, int> getShortestNdis()
         {
