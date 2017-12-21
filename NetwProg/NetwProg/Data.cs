@@ -43,6 +43,33 @@ namespace NetwProg
                 //Recompute();
             }
         }
+        public static void cleanNdisWithGivenDis(int nb, string s)
+        {
+            //hier checken we of we een route gebruiken via buur nb die niet meer in de dis staat van buur nb,
+            //die route moet dan namelijk verwijderd worden.
+            string[] temp = s.Split();
+            List<int> key = new List<int>();
+            List<int> keys = ndis.Keys.ToList();
+            List<int> kaas = new List<int>();
+            //get all keys that aren't in the dis.
+            for (int i = 0; i < temp.Count(); i += 2)
+            {
+                int x = int.Parse(temp[i]);
+                    key.Add(x);
+            }
+            foreach(int x in keys)
+            {
+                if (!key.Contains(x))
+                    kaas.Add(x);
+            }
+            //voor alle keys die niet in de dis zitten van de neighbour
+            //verwijder het pad via die neighbour.
+            for (int i = kaas.Count - 1; i > 0; i--)
+            {
+                ndis[kaas[i]].removePath(nb);
+            }
+
+        }
         public static void RemoveNeighbourFromNDis(int nbPort)
         {
             List<int> keys = ndis.Keys.ToList();
@@ -129,8 +156,7 @@ namespace NetwProg
                 {
                     try
                     {
-                        Console.WriteLine("Send message to neighbour: " + nb.Key + "goal: " + goal);
-                       nb.Value.Write.WriteLine("U " + goal + " " + (dist) + " " + Program.port);
+                       nb.Value.Write.WriteLine("U " + Program.port + disToString());
                     }
                     catch
                     {
@@ -139,6 +165,15 @@ namespace NetwProg
                 }
             }
 
+        }
+        public static string disToString()
+        {
+            string s = "";
+            foreach (KeyValuePair<int,int> entry in dis)
+            {
+                s += " " + entry.Key + " " + entry.Value;
+            }
+            return s;
         }
 
         public static void printRoutingTable()
