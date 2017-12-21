@@ -45,6 +45,10 @@ namespace NetwProg
         }
         public static void cleanNdisWithGivenDis(int nb, string s)
         {
+            //
+            //DIT WERKT NIET 
+            //MOET OP EEN OF ANDERE MANIER ROUTES VERWIJDEREN DIE NIET MEER KUNNEN.
+
             //hier checken we of we een route gebruiken via buur nb die niet meer in de dis staat van buur nb,
             //die route moet dan namelijk verwijderd worden.
             string[] temp = s.Split();
