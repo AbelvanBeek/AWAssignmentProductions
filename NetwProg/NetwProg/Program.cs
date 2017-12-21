@@ -25,8 +25,7 @@ namespace NetwProg
             string[] input = args;
             Console.Title = "NetChange " + input[0];
             port = int.Parse(input[0]);
-            Data.AddNDisEntry(port);
-            //Data.ndis[port].AddPath
+            Data.AddNDisEntry(port, 0, port);
             server = new Server(port);
             for (int i = 1; i < input.Length; i++)
             {
@@ -44,9 +43,8 @@ namespace NetwProg
                     }
                 }
                 //Connection newConnection = new Connection(nbport);
-                Data.AddNDisEntry(nbport);
-                Data.ndis[nbport].AddPath(nbport, 0);
-                Data.ndis[port].AddPath(nbport, 1);
+                Data.AddNDisEntry(nbport, 1, nbport);
+                //Data.ndis[nbport].AddPath(nbport, 1);
             }
         }
         static void CreateInputThread()

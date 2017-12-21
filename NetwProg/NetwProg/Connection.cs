@@ -84,19 +84,35 @@ namespace NetwProg
                 case "B":
                     //Stuur bericht
                     newport = int.Parse(input[1]);
-                    if (!Data.returnNeighbours().Contains(newport))
+                    if (!Data.connections.ContainsKey(newport))
                     {
                         //stuur door naar dichstbijzijnde buur.
+                        try
+                        {
+                            int vianb = Data.ndis[newport].getShortestNdis().Key;
+                            Console.WriteLine("Via deze kortste pad naar " + newport + " via " + vianb);
+                            Data.connections[vianb].Write.WriteLine("B " + newport + " " + rest);
+                        }
+                        catch(Exception e)
+                        {
+                            Console.WriteLine(e);
+                            Console.WriteLine("Tried to forward message " + rest + " to " + newport + " but failed");
+                        }
+
                     }
-                    try
+                    else
                     {
-                        Connection connection = Data.connections[newport];
-                        connection.Write.WriteLine(rest);
+                        try
+                        {
+                            Connection connection = Data.connections[newport];
+                            connection.Write.WriteLine(rest);
+                        }
+                        catch
+                        {
+                            Console.WriteLine("Poort " + newport + " is niet bekend");
+                        }
                     }
-                    catch
-                    {
-                        Console.WriteLine("Poort " + newport + " is niet bekend");
-                    }
+
                     break;
                 case "C":
                     //maak connection
@@ -105,8 +121,8 @@ namespace NetwProg
                     {
                         Connection newConnection = new Connection(newport);
                         //DIT HIERONDER KAN TEMP ZIJN NU WE NOG MET C EEN CONNECTION MAKEN
-                        Data.AddNDisEntry(newport);
-                        Data.ndis[newport].AddPath(newport, 0);
+                        Data.AddNDisEntry(newport, 1, newport);
+                        //Data.ndis[newport].AddPath(newport, 1);
                     }
                     break;
                 case "D":
@@ -123,10 +139,8 @@ namespace NetwProg
                     break;
                 case "U":
                     //Eerst ndis updaten en dan recompute
-                    newport = int.Parse(input[1]);
-                    Data.AddNDisEntry(newport);
-                    //Dit fuckt, ik zeg het je
-                    Data.ndis[newport].AddPath(int.Parse(input[3]), int.Parse(input[2]));
+                    newport = int.Parse(input[1]); //newport = goal
+                    Data.AddNDisEntry(newport, int.Parse(input[2]), int.Parse(input[3])); //input[3] is via welke neighbour | input[2] is de distance
                     break;
                 default:
                     //

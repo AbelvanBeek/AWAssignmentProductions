@@ -25,18 +25,19 @@ namespace NetwProg
             else dis.Add(goal, dist);
             //NOTIFY CODE HERE
         }
-        public static void AddNDisEntry(int goal)
+        public static void AddNDisEntry(int goal, int dist, int viaport)
         {
             if (!ContainsNDis(goal))
             {
                 NDisEntry entry = new NDisEntry(goal);
+                entry.AddPath(viaport, dist);
                 ndis.Add(goal, entry);
-                Recompute();
             }
             else
             {
-                Console.WriteLine("Adding to NDIS failed: already in NDIS");
+                ndis[goal].AddPath(viaport, dist);
             }
+            //Recompute();
         }
 
         public static List<int> returnNeighbours()
@@ -87,12 +88,14 @@ namespace NetwProg
 
                 if (dis.ContainsKey(goal))
                 {
-                    if (dis[goal] != shortestDist)
-                    {
-                        dis[goal] = shortestDist;
-                        //send message to all neighbours that value for goal has changed
-                        sendMessageToAllNeighbours(goal, (shortestDist + 1));
-                    }
+                    if (dis[goal] == shortestDist) //skip if nothing has changed
+                        continue;
+
+                    dis[goal] = shortestDist + 1;
+                    //send message to all neighbours that value for goal has changed
+                    sendMessageToAllNeighbours(goal, (shortestDist + 1));
+                    
+                    Console.WriteLine("Goal not contained in dis");
                 }
                 else
                 {
@@ -105,28 +108,25 @@ namespace NetwProg
 
         public static void sendMessageToAllNeighbours(int goal, int dist)
         {
-            List<int> nb = returnNeighbours();
-            if (nb != null)
-            {
-                foreach (int neigb in nb)
+            Console.WriteLine("sendmessagetoallneighbors wordt aangeroepen");
+
+            foreach (KeyValuePair<int,Connection> nb in Data.connections)
+            {  
+                try
                 {
-                    try
-                    {
-                        Connection connection = Data.connections[neigb];
-                        connection.Write.WriteLine("U " + goal + " " + dist + " " + Program.port);
-                    }
-                    catch
-                    {
-                        Console.WriteLine("Deze man heeft nog geen connection: " + neigb);
-                    }
+                    nb.Value.Write.WriteLine("U " + goal + " " + dist + " " + Program.port);
+                }
+                catch
+                {
+                    Console.WriteLine("Send message to neighbour: " + nb.Key + " failed, no direct connection with neighbour");
                 }
             }
+
         }
 
         public static void printRoutingTable()
         {
             
-            Console.WriteLine(Program.port + " " + 0 + " local");
             foreach (KeyValuePair<int, NDisEntry> entry in ndis)
             {
                 entry.Value.print();
