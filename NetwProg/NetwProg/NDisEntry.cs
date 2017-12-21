@@ -9,6 +9,7 @@ namespace NetwProg
     public class NDisEntry
     {
         public int goal;
+        //          NB, DIST
         Dictionary<int, int> disViaNb = new Dictionary<int, int>();
 
         public NDisEntry(int goal)
@@ -18,12 +19,16 @@ namespace NetwProg
 
         public void AddPath(int nb, int dist)
         {
-            if (disViaNb.ContainsKey(nb))
-                disViaNb[nb] = dist;
-            else
-                disViaNb.Add(nb, dist);
+                if (disViaNb.ContainsKey(nb))
+                    disViaNb[nb] = dist;
+                else
+                    disViaNb.Add(nb, dist);
 
-            Data.Recompute();
+                Data.Recompute();
+        }
+        public void removePath(int port)
+        {
+            disViaNb.Remove(port);
         }
 
         public List<int> returnAllNB()
@@ -50,7 +55,7 @@ namespace NetwProg
         {
             //NDIS KAN LEEG ZIJN, DAN FUCKT ALLES
             int value = int.MaxValue;
-            KeyValuePair<int,int> temp = new KeyValuePair<int, int>();
+            KeyValuePair<int, int> temp = new KeyValuePair<int, int>();
             foreach (KeyValuePair<int,int> tuple in disViaNb)
             {
                 if (tuple.Value < value)
@@ -60,6 +65,10 @@ namespace NetwProg
                 }
             }
             return temp;
+        }
+        public int length()
+        {
+            return disViaNb.Keys.Count();
         }
     }
 }

@@ -13,31 +13,47 @@ namespace NetwProg
          * 
          * dis bevat op index 0: doelrouter, 1: geschatte minimale distance uit ndis + 1
          */
-
+        public static object dummy = new object();
+        public static object computelock = new object();
         public static Dictionary<int,NDisEntry> ndis = new Dictionary<int, NDisEntry>();
         public static Dictionary<int, int> dis = new Dictionary<int, int>();
         public static Dictionary<int, Connection> connections = new Dictionary<int, Connection>();
 
         public static void AddDisEntry(int goal, int dist)
         {
-            if (dis.ContainsKey(goal))
-                dis[goal] = dist;
-            else dis.Add(goal, dist);
+                if (dis.ContainsKey(goal))
+                    dis[goal] = dist;
+                else dis.Add(goal, dist);
             //NOTIFY CODE HERE
         }
         public static void AddNDisEntry(int goal, int dist, int viaport)
         {
-            if (!ContainsNDis(goal))
+            lock (Data.computelock)
             {
-                NDisEntry entry = new NDisEntry(goal);
-                entry.AddPath(viaport, dist);
-                ndis.Add(goal, entry);
+                if (!ContainsNDis(goal))
+                {
+                    NDisEntry entry = new NDisEntry(goal);
+                    entry.AddPath(viaport, dist);
+                    ndis.Add(goal, entry);
+                }
+                else
+                {
+                    ndis[goal].AddPath(viaport, dist);
+                }
+                //Recompute();
             }
-            else
+        }
+        public static void RemoveNeighbourFromNDis(int nbPort)
+        {
+            List<int> keys = ndis.Keys.ToList();
+            for (int i = keys.Count -1; i > 0; i--)
             {
-                ndis[goal].AddPath(viaport, dist);
+                ndis[keys[i]].removePath(nbPort);
+                if(ndis[keys[i]].length() == 0)
+                {
+                    ndis.Remove(keys[i]);
+                }
             }
-            //Recompute();
         }
 
         public static List<int> returnNeighbours()
@@ -78,6 +94,7 @@ namespace NetwProg
 
                 int goal = entry.Key;
                 int shortestDist = entry.Value.getShortestNdis().Value;
+                int preferredNB = entry.Value.getShortestNdis().Key;
 
                 if (goal == Program.port)
                 {
@@ -88,37 +105,37 @@ namespace NetwProg
 
                 if (dis.ContainsKey(goal))
                 {
-                    if (dis[goal] == shortestDist) //skip if nothing has changed
-                        continue;
-
-                    dis[goal] = shortestDist + 1;
-                    //send message to all neighbours that value for goal has changed
-                    sendMessageToAllNeighbours(goal, (shortestDist + 1));
-                    
-                    Console.WriteLine("Goal not contained in dis");
+                    if (shortestDist < dis[goal]) //if we have a shorter distance now.
+                    {
+                        dis[goal] = shortestDist;
+                        Console.WriteLine("Afstand naar " + goal + " is nu " + (shortestDist) + " via " + preferredNB);
+                        sendMessageToAllNeighbours(goal, (shortestDist));
+                    }
                 }
                 else
                 {
                     dis.Add(goal, shortestDist);
                     //send message to all neighbours
-                    sendMessageToAllNeighbours(goal, (shortestDist + 1));
+                    sendMessageToAllNeighbours(goal, (shortestDist));
                 }
             }
         }
 
         public static void sendMessageToAllNeighbours(int goal, int dist)
         {
-            Console.WriteLine("sendmessagetoallneighbors wordt aangeroepen");
-
-            foreach (KeyValuePair<int,Connection> nb in Data.connections)
-            {  
-                try
+            lock (Data.dummy)
+            {
+                foreach (KeyValuePair<int, Connection> nb in Data.connections)
                 {
-                    nb.Value.Write.WriteLine("U " + goal + " " + dist + " " + Program.port);
-                }
-                catch
-                {
-                    Console.WriteLine("Send message to neighbour: " + nb.Key + " failed, no direct connection with neighbour");
+                    try
+                    {
+                        Console.WriteLine("Send message to neighbour: " + nb.Key + "goal: " + goal);
+                       nb.Value.Write.WriteLine("U " + goal + " " + (dist) + " " + Program.port);
+                    }
+                    catch
+                    {
+                        Console.WriteLine("Send message to neighbour: " + nb.Key + " failed, no direct connection with neighbour");
+                    }
                 }
             }
 
