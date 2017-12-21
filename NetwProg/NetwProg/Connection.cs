@@ -15,6 +15,7 @@ namespace NetwProg
         public StreamWriter Write;
         TcpClient client;
         int port;
+        object write = new object();
 
         // Connection heeft 2 constructoren: deze constructor wordt gebruikt als wij CLIENT worden bij een andere SERVER
         public Connection(int port)
@@ -30,7 +31,10 @@ namespace NetwProg
 
             // Start het reader-loopje
             new Thread(ReaderThread).Start();
-            Data.connections.Add(port, this);
+            lock (Data.dummy)
+            {
+                Data.connections.Add(port, this);
+            }
             Console.WriteLine("Verbonden: " + port);
         }
 
@@ -38,8 +42,9 @@ namespace NetwProg
         public Connection(StreamReader read, StreamWriter write)
         {
             Read = read; Write = write;
-
+            //Console.WriteLine("Verbonden: " + port);
             // Start het reader-loopje
+
             new Thread(ReaderThread).Start();
         }
 
@@ -53,6 +58,7 @@ namespace NetwProg
                 while (true)
                 {
                     string input = Read.ReadLine();
+                    //if (! (input[0] == 'U'))
                     Console.WriteLine(input);
                     ParseInput(input);
                 }
@@ -60,7 +66,7 @@ namespace NetwProg
             }
             catch
             {
-                Console.WriteLine("No Connection Found");
+                //Console.WriteLine("No Connection Found");
             } // Verbinding is kennelijk verbroken
         }
         public void Close()
@@ -79,24 +85,24 @@ namespace NetwProg
             switch (input[0])
             {
                 case "R":
-                    Data.printRoutingTable();
+                        Data.printRoutingTable();
                     break;
                 case "B":
                     //Stuur bericht
                     newport = int.Parse(input[1]);
+                    int vianb = Data.ndis[newport].getShortestNdis().Key;
                     if (!Data.connections.ContainsKey(newport))
                     {
                         //stuur door naar dichstbijzijnde buur.
                         try
                         {
-                            int vianb = Data.ndis[newport].getShortestNdis().Key;
-                            Console.WriteLine("Via deze kortste pad naar " + newport + " via " + vianb);
+                            Console.WriteLine("Bericht voor " + newport + " doorgestuurd naar " + vianb);
                             Data.connections[vianb].Write.WriteLine("B " + newport + " " + rest);
                         }
                         catch(Exception e)
                         {
-                            Console.WriteLine(e);
-                            Console.WriteLine("Tried to forward message " + rest + " to " + newport + " but failed");
+                            //Console.WriteLine(e);
+                            //Console.WriteLine("Tried to forward message " + rest + " to " + newport + " but failed");
                         }
 
                     }
@@ -105,7 +111,9 @@ namespace NetwProg
                         try
                         {
                             Connection connection = Data.connections[newport];
+                            Console.WriteLine("Bericht voor " + newport + " doorgestuurd naar " + vianb);
                             connection.Write.WriteLine(rest);
+
                         }
                         catch
                         {
@@ -129,18 +137,22 @@ namespace NetwProg
                     newport = int.Parse(input[1]);
                     try
                     {
-                        Data.connections[newport].Close();
                         Data.connections.Remove(newport);
+                        //Data.connections[newport].Close();
+                        Data.RemoveNeighbourFromNDis(newport);
+                        //remove from Ndis
+                        Console.WriteLine("Verbroken: " + newport);
                     }
-                    catch
+                    catch(Exception e)
                     {
+                        Console.WriteLine(e);
                         Console.WriteLine("Poort " + newport + " is niet bekend");
                     }
                     break;
                 case "U":
                     //Eerst ndis updaten en dan recompute
                     newport = int.Parse(input[1]); //newport = goal
-                    Data.AddNDisEntry(newport, int.Parse(input[2]), int.Parse(input[3])); //input[3] is via welke neighbour | input[2] is de distance
+                    Data.AddNDisEntry(newport, int.Parse(input[2]) + 1, int.Parse(input[3])); //input[3] is via welke neighbour | input[2] is de distance
                     break;
                 default:
                     //
