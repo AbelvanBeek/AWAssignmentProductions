@@ -48,12 +48,12 @@ namespace NetwProg
                     }
                 }
             }
-            Thread.Sleep(5000);
+            //Thread.Sleep(5000);
             foreach (KeyValuePair<int, Connection> nb in Data.connections)
             {
                 Data.AddNDisEntry(nb.Key, 1, nb.Key);
             }
-            //Data.sendMessageToAllNeighbours(port, 0);
+            Data.sendMessageToAllNeighbours();
         }
         static void CreateInputThread()
         {

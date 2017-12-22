@@ -74,6 +74,46 @@ namespace NetwProg
             }
 
         }
+
+        public static void compareTheirDisWithOurNdis(int nb, string dis)
+        {
+            lock (computelock)
+            {
+                Dictionary<int, int> theirDis = ParseTheirDis(dis);
+                List<int> ndiskeys = ndis.Keys.ToList();
+
+                for (int i = ndiskeys.Count - 1; i >= 0; i--)
+                {
+                    List<int> disvianbKeys = new List<int>();
+                    for (int j = disvianbKeys.Count - 1; i >= 0; i--)
+                    {
+                        int goal = ndiskeys[i];
+                        int viaNb = disvianbKeys[j];
+                        if (viaNb == nb)
+                        {
+                            if (!theirDis.ContainsKey(goal))
+                            {
+                                //ndis[goal].disViaNb[viaNb] = int.MaxValue;
+                                ndis[goal].disViaNb.Remove(viaNb);
+                            }
+                            //theirDis[viaNb] ndis[ndiskeys[i]].disViaNb[viaNb];
+                        }
+                    }
+                }
+            }
+        }
+
+        public static Dictionary<int,int> ParseTheirDis(string s)
+        {
+            Dictionary<int, int> tempDic = new Dictionary<int, int>();
+            string[] temp = s.Split();
+            for(int i = 0; i < temp.Length; i += 2)
+            {
+                tempDic.Add(int.Parse(temp[i]), int.Parse(temp[i + 1]));
+            }
+            return tempDic;
+        }
+
         public static void RemoveNeighbourFromNDis(int nbPort)
         {
             List<int> keys = ndis.Keys.ToList();
@@ -115,7 +155,61 @@ namespace NetwProg
                 return false;
             return nb.Contains(port);
         }
+        /*
+        public static void Recompute()
+        {
+            Dictionary<int, int> newdis = new Dictionary<int, int>();
 
+            foreach (KeyValuePair<int, NDisEntry> entry in ndis)
+            {
+                //all goals in ndis, check if its there, if so, check if it has changed 
+                //--> if so, change to smallest value and send message to neighbours, otherwise, skip
+
+                int goal = entry.Key;
+                int shortestDist = entry.Value.getShortestNdis().Value;
+                int preferredNB = entry.Value.getShortestNdis().Key;
+
+                if (goal == Program.port)
+                {
+                    //if (dis.ContainsKey(goal))
+                    //    continue;
+                    newdis.Add(goal, 0);
+                    continue;
+                }
+
+                newdis.Add(goal, shortestDist);
+                if (dis.ContainsKey(goal))
+                {
+                    if (dis[goal] > newdis[goal])
+                    {
+                        Console.WriteLine("Afstand naar " + goal + " is nu " + (shortestDist) + " via " + preferredNB);
+                        //sendMessageToAllNeighbours();
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Afstand naar " + goal + " is nu " + (shortestDist) + " via " + preferredNB);
+                    //sendMessageToAllNeighbours();
+                }
+                //sendMessageToAllNeighbours();
+            }
+            
+            foreach (KeyValuePair<int, int> disentry in dis)
+            {
+                if (!newdis.ContainsKey(disentry.Key))
+                {
+                    KeyValuePair<int, int> shortestdist = ndis[disentry.Key].getShortestNdis();
+                    Console.WriteLine("Afstand naar " + disentry.Key + " is nu " + shortestdist.Value + " via " + shortestdist.Key);
+                }
+                //sendMessageToAllNeighbours();
+
+            }
+            //sendMessageToAllNeighbours();
+            dis = newdis;
+            sendMessageToAllNeighbours();
+            Console.WriteLine(disToString());
+        }
+        */
         public static void Recompute()
         {
             foreach (KeyValuePair<int, NDisEntry> entry in ndis)
@@ -140,19 +234,20 @@ namespace NetwProg
                     {
                         dis[goal] = shortestDist;
                         Console.WriteLine("Afstand naar " + goal + " is nu " + (shortestDist) + " via " + preferredNB);
-                        sendMessageToAllNeighbours(goal, (shortestDist));
+                        sendMessageToAllNeighbours();
                     }
                 }
                 else
                 {
                     dis.Add(goal, shortestDist);
                     //send message to all neighbours
-                    sendMessageToAllNeighbours(goal, (shortestDist));
+                    sendMessageToAllNeighbours();
                 }
             }
+            //Console.WriteLine(disToString());
         }
 
-        public static void sendMessageToAllNeighbours(int goal, int dist)
+        public static void sendMessageToAllNeighbours()
         {
             lock (Data.dummy)
             {

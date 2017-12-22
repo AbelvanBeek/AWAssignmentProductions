@@ -10,7 +10,7 @@ namespace NetwProg
     {
         public int goal;
         //          NB, DIST
-        Dictionary<int, int> disViaNb = new Dictionary<int, int>();
+        public Dictionary<int, int> disViaNb = new Dictionary<int, int>();
 
         public NDisEntry(int goal)
         {
