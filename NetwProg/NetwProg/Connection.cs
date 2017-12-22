@@ -142,6 +142,7 @@ namespace NetwProg
                         //Data.connections[newport].Close();
                         Data.dis.Remove(newport);
                         Data.RemoveNeighbourFromNDis(newport);
+                        //Data.deleteMessage(newport);
                         //remove from Ndis
                         Console.WriteLine("Verbroken: " + newport);
                     }
@@ -151,13 +152,58 @@ namespace NetwProg
                         Console.WriteLine("Poort " + newport + " is niet bekend");
                     }
                     break;
+                case "DEL":
+                    newport = int.Parse(input[1]);
+                    int goal = int.Parse(input[2]);
+                    int newdis = int.Parse(input[3]);
+                    try
+                    {
+                        Data.dis.Remove(newport);
+                        Data.ndis[goal].disViaNb.Remove(newport);
+                        if (Data.ndis[goal].length() == 0)
+                            Data.ndis.Remove(goal);
+                        if (Data.ndis[goal].getShortestNdis().Key == 0)
+                            Data.deleteMessage(newport);
+                        Data.Recompute();
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e);
+                    }
+                    break;
                 case "U":
                     //Eerst ndis updaten en dan recompute
                     newport = int.Parse(input[1]); //newport = goal
                     
                     for (int i = 2; i < input.Length; i += 2)
                     {
-                        Data.AddNDisEntry(int.Parse(input[i]), int.Parse(input[i + 1]) + 1, newport);
+                        int to = int.Parse(input[i]);
+                        int dist = int.Parse(input[i + 1]) + 1;
+                
+                        if (dist > 20)
+                        {
+                            Data.ndis.Remove(to);
+                            if (dist == 21)
+                            {
+                                lock (Data.computelock)
+                                {
+                                    foreach (KeyValuePair<int, Connection> nb in Data.connections)
+                                    {
+                                        try
+                                        {
+                                            nb.Value.Write.WriteLine("U " + Program.port + " " + to + " " + 21);
+                                        }
+                                        catch
+                                        {
+                                            Console.WriteLine("Send message to neighbour: " + nb.Key + " failed, no direct connection with neighbour");
+                                        }
+                                    }
+                                }
+                            }
+                            Data.Recompute();
+                        }
+                        else
+                            Data.AddNDisEntry(to, dist, newport);
                         //we moeten voor iedere plek waar we de zender van dit bericht als pad hebben kijken of hij nog steeds een pad heeft.
                     }
                     //Data.compareTheirDisWithOurNdis(newport, rest);

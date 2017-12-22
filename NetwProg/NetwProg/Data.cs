@@ -224,9 +224,9 @@ namespace NetwProg
                     //--> if so, change to smallest value and send message to neighbours, otherwise, skip
 
                 int goal = entry.Key;
-                int shortestDist = entry.Value.getShortestNdis().Value;
+                int shortestDist = ndis[goal].getShortestNdis().Value;// entry.Value.getShortestNdis().Value;
                 int preferredNB = entry.Value.getShortestNdis().Key;
-
+                
                 if (goal == Program.port)
                 {
                     if (dis.ContainsKey(goal))
@@ -236,12 +236,14 @@ namespace NetwProg
 
                 if (dis.ContainsKey(goal))
                 {
-                    if (shortestDist < dis[goal]) //if we have a shorter distance now.
+                    if (shortestDist != dis[goal]) //if we have a shorter or longer distance now.
                     {
                         dis[goal] = shortestDist;
                         Console.WriteLine("Afstand naar " + goal + " is nu " + (shortestDist) + " via " + preferredNB);
                         sendMessageToAllNeighbours();
+                        Console.WriteLine(shortestDist);
                     }
+
                 }
                 else
                 {
@@ -270,6 +272,29 @@ namespace NetwProg
                 }
             }
 
+        }
+        public static void deleteMessage(int port)
+        {
+            int newdis = -1;
+            try
+            {
+                newdis = ndis[port].getShortestNdis().Value;
+            }
+            catch
+            {
+
+            }
+            foreach (KeyValuePair<int, Connection> nb in Data.connections)
+            {
+                try
+                {
+                    nb.Value.Write.WriteLine("DEL " +  port + " " + Program.port + " " + newdis);
+                }
+                catch
+                {
+                    Console.WriteLine("Send message to neighbour: " + nb.Key + " failed, no direct connection with neighbour");
+                }
+            }
         }
         public static string disToString()
         {
