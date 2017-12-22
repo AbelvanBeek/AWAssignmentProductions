@@ -159,7 +159,9 @@ namespace NetwProg
                         Data.AddNDisEntry(int.Parse(input[i]), int.Parse(input[i + 1]) + 1, newport);
                         //we moeten voor iedere plek waar we de zender van dit bericht als pad hebben kijken of hij nog steeds een pad heeft.
                     }
-                    Data.compareTheirDisWithOurNdis(newport, rest);
+                    //Data.compareTheirDisWithOurNdis(newport, rest);
+
+
                     //Data.cleanNdisWithGivenDis(newport, rest);
                     //Data.AddNDisEntry(newport, int.Parse(input[2]) + 1, int.Parse(input[3])); //input[3] is via welke neighbour | input[2] is de distance
                     break;
