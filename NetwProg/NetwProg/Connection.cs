@@ -140,6 +140,7 @@ namespace NetwProg
                         Data.connections[newport].Write.WriteLine("D " + Program.port);
                         Data.connections.Remove(newport);
                         //Data.connections[newport].Close();
+                        Data.dis.Remove(newport);
                         Data.RemoveNeighbourFromNDis(newport);
                         //remove from Ndis
                         Console.WriteLine("Verbroken: " + newport);
@@ -160,6 +161,7 @@ namespace NetwProg
                         //we moeten voor iedere plek waar we de zender van dit bericht als pad hebben kijken of hij nog steeds een pad heeft.
                     }
                     //Data.compareTheirDisWithOurNdis(newport, rest);
+                    //Data.printNdis();
 
 
                     //Data.cleanNdisWithGivenDis(newport, rest);

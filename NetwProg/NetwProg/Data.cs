@@ -40,7 +40,7 @@ namespace NetwProg
                 {
                     ndis[goal].AddPath(viaport, dist);
                 }
-                //Recompute();
+                Recompute();
             }
         }
         public static void cleanNdisWithGivenDis(int nb, string s)
@@ -95,6 +95,11 @@ namespace NetwProg
                             {
                                 //ndis[goal].disViaNb[viaNb] = int.MaxValue;
                                 ndis[goal].disViaNb.Remove(viaNb);
+                                Recompute();
+                            }else
+                            {
+                                ndis[goal].disViaNb[viaNb] = theirDis[goal];
+                                Recompute();
                             }
                             //theirDis[viaNb] ndis[ndiskeys[i]].disViaNb[viaNb];
                         }
@@ -125,6 +130,7 @@ namespace NetwProg
                     ndis.Remove(keys[i]);
                 }
             }
+            Recompute();
         }
 
         public static List<int> returnNeighbours()
@@ -281,6 +287,17 @@ namespace NetwProg
             foreach (KeyValuePair<int, NDisEntry> entry in ndis)
             {
                 entry.Value.print();
+            }
+        }
+        public static void printNdis()
+        {
+            foreach (KeyValuePair<int, NDisEntry> x in ndis)
+            {
+                Console.WriteLine("Goal: " + x.Key);
+                foreach (KeyValuePair<int,int> entry in ndis[x.Key].disViaNb)
+                {
+                    Console.WriteLine("Nb: " + entry.Key + "dist: " + entry.Value);
+                }
             }
         }
     }
