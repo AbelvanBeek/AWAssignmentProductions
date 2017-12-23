@@ -179,11 +179,11 @@ namespace NetwProg
                     {
                         int to = int.Parse(input[i]);
                         int dist = int.Parse(input[i + 1]) + 1;
-                
-                        if (dist > 20)
+                        
+                        if (dist > Data.dis.Count)
                         {
                             Data.ndis.Remove(to);
-                            if (dist == 21)
+                            if (dist == (Data.dis.Count + 1))
                             {
                                 lock (Data.computelock)
                                 {
@@ -191,7 +191,7 @@ namespace NetwProg
                                     {
                                         try
                                         {
-                                            nb.Value.Write.WriteLine("U " + Program.port + " " + to + " " + 21);
+                                            nb.Value.Write.WriteLine("U " + Program.port + " " + to + " " + (Data.dis.Count + 1));
                                         }
                                         catch
                                         {
