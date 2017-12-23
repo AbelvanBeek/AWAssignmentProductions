@@ -28,6 +28,7 @@ namespace NetwProg
             port = int.Parse(input[0]);
             Data.AddNDisEntry(port, 0, port);
             server = new Server(port);
+            //Try to make a connections with all the neighbours, if not possible, try again
             for (int i = 1; i < input.Length; i++)
             {
                 int nbport = int.Parse(input[i]);
@@ -55,6 +56,8 @@ namespace NetwProg
             }
             Data.sendMessageToAllNeighbours();
         }
+
+        //Code for the thread that reads from the console
         static void CreateInputThread()
         {
             while (true)

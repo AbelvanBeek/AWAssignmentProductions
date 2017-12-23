@@ -41,7 +41,6 @@ namespace NetwProg
                 {
                     Data.connections.Add(zijnPoort, new Connection(clientIn, clientOut));
                 }
-                //Data.AddNDisEntry(zijnPoort, );
             }
         }
     }

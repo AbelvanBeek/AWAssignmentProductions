@@ -15,7 +15,7 @@ namespace NetwProg
         public StreamWriter Write;
         TcpClient client;
         int port;
-        object write = new object();
+        //object write = new object();
 
         // Connection heeft 2 constructoren: deze constructor wordt gebruikt als wij CLIENT worden bij een andere SERVER
         public Connection(int port)
@@ -152,6 +152,7 @@ namespace NetwProg
                         Console.WriteLine("Poort " + newport + " is niet bekend");
                     }
                     break;
+                    /*
                 case "DEL":
                     newport = int.Parse(input[1]);
                     int goal = int.Parse(input[2]);
@@ -171,6 +172,7 @@ namespace NetwProg
                         Console.WriteLine(e);
                     }
                     break;
+                    */
                 case "U":
                     //Eerst ndis updaten en dan recompute
                     newport = int.Parse(input[1]); //newport = goal

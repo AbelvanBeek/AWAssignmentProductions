@@ -9,9 +9,9 @@ namespace NetwProg
     public static class Data
     {
         /*
-         * ndis bevat op index 0: doelrouter, 1..*: buren (dus ook doelrouter) op oplopende index
+         * ndis bevat de doelrouter in de key, de value is een ndisentry. Voor meer informatie, zie NDisEntry.cs.
          * 
-         * dis bevat op index 0: doelrouter, 1: geschatte minimale distance uit ndis + 1
+         * dis bevat de doelrouter in de key, de value bevat een schatting van de kortste afstand naar die doelrouter.
          */
         public static object dummy = new object();
         public static object computelock = new object();
@@ -19,13 +19,6 @@ namespace NetwProg
         public static Dictionary<int, int> dis = new Dictionary<int, int>();
         public static Dictionary<int, Connection> connections = new Dictionary<int, Connection>();
 
-        public static void AddDisEntry(int goal, int dist)
-        {
-                if (dis.ContainsKey(goal))
-                    dis[goal] = dist;
-                else dis.Add(goal, dist);
-            //NOTIFY CODE HERE
-        }
         public static void AddNDisEntry(int goal, int dist, int viaport)
         {
             lock (Data.computelock)
@@ -43,81 +36,6 @@ namespace NetwProg
                 Recompute();
             }
         }
-        public static void cleanNdisWithGivenDis(int nb, string s)
-        {
-            //
-            //DIT WERKT NIET 
-            //MOET OP EEN OF ANDERE MANIER ROUTES VERWIJDEREN DIE NIET MEER KUNNEN.
-
-            //hier checken we of we een route gebruiken via buur nb die niet meer in de dis staat van buur nb,
-            //die route moet dan namelijk verwijderd worden.
-            string[] temp = s.Split();
-            List<int> key = new List<int>();
-            List<int> keys = ndis.Keys.ToList();
-            List<int> kaas = new List<int>();
-            //get all keys that aren't in the dis.
-            for (int i = 0; i < temp.Count(); i += 2)
-            {
-                int x = int.Parse(temp[i]);
-                    key.Add(x);
-            }
-            foreach(int x in keys)
-            {
-                if (!key.Contains(x))
-                    kaas.Add(x);
-            }
-            //voor alle keys die niet in de dis zitten van de neighbour
-            //verwijder het pad via die neighbour.
-            for (int i = kaas.Count - 1; i > 0; i--)
-            {
-                ndis[kaas[i]].removePath(nb);
-            }
-
-        }
-
-        public static void compareTheirDisWithOurNdis(int nb, string dis)
-        {
-            lock (computelock)
-            {
-                Dictionary<int, int> theirDis = ParseTheirDis(dis);
-                List<int> ndiskeys = ndis.Keys.ToList();
-
-                for (int i = ndiskeys.Count - 1; i >= 0; i--)
-                {
-                    List<int> disvianbKeys = new List<int>();
-                    for (int j = disvianbKeys.Count - 1; i >= 0; i--)
-                    {
-                        int goal = ndiskeys[i];
-                        int viaNb = disvianbKeys[j];
-                        if (viaNb == nb)
-                        {
-                            if (!theirDis.ContainsKey(goal))
-                            {
-                                //ndis[goal].disViaNb[viaNb] = int.MaxValue;
-                                ndis[goal].disViaNb.Remove(viaNb);
-                                Recompute();
-                            }else
-                            {
-                                ndis[goal].disViaNb[viaNb] = theirDis[goal];
-                                Recompute();
-                            }
-                            //theirDis[viaNb] ndis[ndiskeys[i]].disViaNb[viaNb];
-                        }
-                    }
-                }
-            }
-        }
-
-        public static Dictionary<int,int> ParseTheirDis(string s)
-        {
-            Dictionary<int, int> tempDic = new Dictionary<int, int>();
-            string[] temp = s.Split();
-            for(int i = 0; i < temp.Length; i += 2)
-            {
-                tempDic.Add(int.Parse(temp[i]), int.Parse(temp[i + 1]));
-            }
-            return tempDic;
-        }
 
         public static void RemoveNeighbourFromNDis(int nbPort)
         {
@@ -132,7 +50,7 @@ namespace NetwProg
             }
             Recompute();
         }
-
+        
         public static List<int> returnNeighbours()
         {
             //get list of neigbours from ndisentries
@@ -141,7 +59,7 @@ namespace NetwProg
             else
                 return null;
         }
-
+        
         public static bool ContainsNDis(int goal)
         {
             foreach (KeyValuePair<int,NDisEntry> entry in ndis)
@@ -151,71 +69,7 @@ namespace NetwProg
             }
             return false;
         }
-
-        public static bool contains(int port)
-        {
-            //check if we have a certain neigbour
-            //check if the port is in the returnNeighbours.
-            List<int> nb = returnNeighbours();
-            if (nb == null)
-                return false;
-            return nb.Contains(port);
-        }
-        /*
-        public static void Recompute()
-        {
-            Dictionary<int, int> newdis = new Dictionary<int, int>();
-
-            foreach (KeyValuePair<int, NDisEntry> entry in ndis)
-            {
-                //all goals in ndis, check if its there, if so, check if it has changed 
-                //--> if so, change to smallest value and send message to neighbours, otherwise, skip
-
-                int goal = entry.Key;
-                int shortestDist = entry.Value.getShortestNdis().Value;
-                int preferredNB = entry.Value.getShortestNdis().Key;
-
-                if (goal == Program.port)
-                {
-                    //if (dis.ContainsKey(goal))
-                    //    continue;
-                    newdis.Add(goal, 0);
-                    continue;
-                }
-
-                newdis.Add(goal, shortestDist);
-                if (dis.ContainsKey(goal))
-                {
-                    if (dis[goal] > newdis[goal])
-                    {
-                        Console.WriteLine("Afstand naar " + goal + " is nu " + (shortestDist) + " via " + preferredNB);
-                        //sendMessageToAllNeighbours();
-                    }
-                }
-                else
-                {
-                    Console.WriteLine("Afstand naar " + goal + " is nu " + (shortestDist) + " via " + preferredNB);
-                    //sendMessageToAllNeighbours();
-                }
-                //sendMessageToAllNeighbours();
-            }
-            
-            foreach (KeyValuePair<int, int> disentry in dis)
-            {
-                if (!newdis.ContainsKey(disentry.Key))
-                {
-                    KeyValuePair<int, int> shortestdist = ndis[disentry.Key].getShortestNdis();
-                    Console.WriteLine("Afstand naar " + disentry.Key + " is nu " + shortestdist.Value + " via " + shortestdist.Key);
-                }
-                //sendMessageToAllNeighbours();
-
-            }
-            //sendMessageToAllNeighbours();
-            dis = newdis;
-            sendMessageToAllNeighbours();
-            Console.WriteLine(disToString());
-        }
-        */
+        
         public static void Recompute()
         {
             foreach (KeyValuePair<int, NDisEntry> entry in ndis)
@@ -273,6 +127,8 @@ namespace NetwProg
             }
 
         }
+
+        /*
         public static void deleteMessage(int port)
         {
             int newdis = -1;
@@ -296,6 +152,7 @@ namespace NetwProg
                 }
             }
         }
+        */
         public static string disToString()
         {
             string s = "";
@@ -314,17 +171,7 @@ namespace NetwProg
                 entry.Value.print();
             }
         }
-        public static void printNdis()
-        {
-            foreach (KeyValuePair<int, NDisEntry> x in ndis)
-            {
-                Console.WriteLine("Goal: " + x.Key);
-                foreach (KeyValuePair<int,int> entry in ndis[x.Key].disViaNb)
-                {
-                    Console.WriteLine("Nb: " + entry.Key + "dist: " + entry.Value);
-                }
-            }
-        }
+
     }
 
 }
