@@ -50,10 +50,17 @@ namespace NetwProg
                 }
             }
             //Thread.Sleep(5000);
-            foreach (KeyValuePair<int, Connection> nb in Data.connections)
+            List<int> keys = Data.connections.Keys.ToList();
+            for (int i = keys.Count - 1; i > 0; i--)
             {
-                Data.AddNDisEntry(nb.Key, 1, nb.Key);
+                try
+                {
+                    Data.AddNDisEntry(keys[i], 1, keys[i]);
+                }
+                catch { }
+                
             }
+
             Data.sendMessageToAllNeighbours();
         }
 

@@ -62,15 +62,18 @@ namespace NetwProg
             //NDIS KAN LEEG ZIJN, DAN FUCKT ALLES
             int value = int.MaxValue;
             KeyValuePair<int, int> temp = new KeyValuePair<int, int>();
-            foreach (KeyValuePair<int,int> tuple in disViaNb)
+            lock (Data.computelock)
             {
-                if (tuple.Value < value)
+                foreach (KeyValuePair<int, int> tuple in disViaNb)
                 {
-                    value = tuple.Value;
-                    temp = tuple;
+                    if (tuple.Value < value)
+                    {
+                        value = tuple.Value;
+                        temp = tuple;
+                    }
                 }
+                return temp;
             }
-            return temp;
         }
         
         public int length()

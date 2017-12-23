@@ -15,14 +15,16 @@ namespace NetwProg
          */
         public static object dummy = new object();
         public static object computelock = new object();
+
         public static Dictionary<int,NDisEntry> ndis = new Dictionary<int, NDisEntry>();
         public static Dictionary<int, int> dis = new Dictionary<int, int>();
         public static Dictionary<int, Connection> connections = new Dictionary<int, Connection>();
 
+        //Voeg een ndisentry toe aan de ndis. Als deze goal al aanwezig is, passen we de kosten aan in de disViaNB dictionary in de NDisEntry bij de juiste 'via neighbour'
         public static void AddNDisEntry(int goal, int dist, int viaport)
         {
-            lock (Data.computelock)
-            {
+            //lock (Data.computelock)
+            //{
                 if (!ContainsNDis(goal))
                 {
                     NDisEntry entry = new NDisEntry(goal);
@@ -34,9 +36,10 @@ namespace NetwProg
                     ndis[goal].AddPath(viaport, dist);
                 }
                 Recompute();
-            }
+            //}
         }
 
+        //Verwijderd alle paden die via nbPort lopen uit de ndis
         public static void RemoveNeighbourFromNDis(int nbPort)
         {
             List<int> keys = ndis.Keys.ToList();
@@ -51,6 +54,7 @@ namespace NetwProg
             Recompute();
         }
         
+        //Geeft een lijst terug van alle neighbours, gebaseerd op de ndis
         public static List<int> returnNeighbours()
         {
             //get list of neigbours from ndisentries
@@ -60,8 +64,10 @@ namespace NetwProg
                 return null;
         }
         
+        //Kijkt op een goal bevat is in de ndis
         public static bool ContainsNDis(int goal)
         {
+
             foreach (KeyValuePair<int,NDisEntry> entry in ndis)
             {
                 if (entry.Key == goal)
@@ -70,17 +76,18 @@ namespace NetwProg
             return false;
         }
         
+        //De befaamde recompute methode
         public static void Recompute()
         {
+            //loop over de hele ndis
             foreach (KeyValuePair<int, NDisEntry> entry in ndis)
             {
-                //all goals in ndis, check if its there, if so, check if it has changed 
-                    //--> if so, change to smallest value and send message to neighbours, otherwise, skip
 
                 int goal = entry.Key;
                 int shortestDist = ndis[goal].getShortestNdis().Value;// entry.Value.getShortestNdis().Value;
                 int preferredNB = entry.Value.getShortestNdis().Key;
                 
+                //Als de goal onszelf is, voeg onszelf toe aan de dis met distance 0
                 if (goal == Program.port)
                 {
                     if (dis.ContainsKey(goal))
@@ -88,12 +95,16 @@ namespace NetwProg
                     dis.Add(goal, 0);
                 }
 
+                //als de goal al in de dis lijst zit
                 if (dis.ContainsKey(goal))
                 {
-                    if (shortestDist != dis[goal]) //if we have a shorter or longer distance now.
+                    //kijk of de afstand tot die goal veranderd is
+                    if (shortestDist != dis[goal]) 
                     {
+                        //zo ja, pas de distance in onze dis aan, laat een melding zien dat de afstand is aangepast en wellicht het pad nu via een andere neighbour loopt
                         dis[goal] = shortestDist;
                         Console.WriteLine("Afstand naar " + goal + " is nu " + (shortestDist) + " via " + preferredNB);
+                        //stuur vervolgens onze nieuwe dis naar onze neighbours
                         sendMessageToAllNeighbours();
                         Console.WriteLine(shortestDist);
                     }
@@ -101,23 +112,24 @@ namespace NetwProg
                 }
                 else
                 {
+                    //goal niet in dis? Dan voegen we hem toe en sturen we wederom onze dis naar onze neighbours
                     dis.Add(goal, shortestDist);
-                    //send message to all neighbours
                     sendMessageToAllNeighbours();
                 }
             }
-            //Console.WriteLine(disToString());
         }
 
         public static void sendMessageToAllNeighbours()
         {
+            //zorg dat de connection lijst niet wordt aangepast terwijl we deze berichten sturen
             lock (Data.dummy)
             {
                 foreach (KeyValuePair<int, Connection> nb in Data.connections)
                 {
                     try
                     {
-                       nb.Value.Write.WriteLine("U " + Program.port + disToString());
+                        //stuur de gehele dis naar onze neighbours
+                        nb.Value.Write.WriteLine("U " + Program.port + disToString());
                     }
                     catch
                     {
@@ -128,31 +140,7 @@ namespace NetwProg
 
         }
 
-        /*
-        public static void deleteMessage(int port)
-        {
-            int newdis = -1;
-            try
-            {
-                newdis = ndis[port].getShortestNdis().Value;
-            }
-            catch
-            {
-
-            }
-            foreach (KeyValuePair<int, Connection> nb in Data.connections)
-            {
-                try
-                {
-                    nb.Value.Write.WriteLine("DEL " +  port + " " + Program.port + " " + newdis);
-                }
-                catch
-                {
-                    Console.WriteLine("Send message to neighbour: " + nb.Key + " failed, no direct connection with neighbour");
-                }
-            }
-        }
-        */
+        //Converteert de dis naar een string die meegestuurt kan worden in een update berichtje
         public static string disToString()
         {
             string s = "";
@@ -163,15 +151,18 @@ namespace NetwProg
             return s;
         }
 
+        //voor elk item in de ndis, print deze naar het scherm
         public static void printRoutingTable()
         {
-            
-            foreach (KeyValuePair<int, NDisEntry> entry in ndis)
+            lock (computelock)
             {
-                entry.Value.print();
+                foreach (KeyValuePair<int, NDisEntry> entry in ndis)
+                {
+                    entry.Value.print();
+                }
             }
-        }
 
+        }
     }
 
 }

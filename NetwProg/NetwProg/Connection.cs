@@ -15,7 +15,6 @@ namespace NetwProg
         public StreamWriter Write;
         TcpClient client;
         int port;
-        //object write = new object();
 
         // Connection heeft 2 constructoren: deze constructor wordt gebruikt als wij CLIENT worden bij een andere SERVER
         public Connection(int port)
@@ -42,7 +41,6 @@ namespace NetwProg
         public Connection(StreamReader read, StreamWriter write)
         {
             Read = read; Write = write;
-            //Console.WriteLine("Verbonden: " + port);
             // Start het reader-loopje
 
             new Thread(ReaderThread).Start();
@@ -57,25 +55,28 @@ namespace NetwProg
             {
                 while (true)
                 {
+                    //Print alles naar de console, behalve U(pdate) berichtjes
                     string input = Read.ReadLine();
-                    //if (! (input[0] == 'U'))
-                    Console.WriteLine(input);
+                    if (! (input[0] == 'U'))
+                        Console.WriteLine(input);
                     ParseInput(input);
                 }
-                //hier iets doen als shit veranderd
+                
             }
             catch
             {
-                //Console.WriteLine("No Connection Found");
             } // Verbinding is kennelijk verbroken
         }
+
         public void Close()
         {
             Console.WriteLine("Verbroken: " + port);
             client.Close();
         }
+
         public static void ParseInput(string inp)
         {
+            //Neem een string als input en switch op wat voor berichtje het is (input[0])
             string[] input = inp.Split();
             string rest = "";
             for (int i = 2; i < input.Length; i++)
@@ -84,30 +85,31 @@ namespace NetwProg
             int newport;
             switch (input[0])
             {
+                //print de routing tabel
                 case "R":
                         Data.printRoutingTable();
                     break;
+                //stuur een bericht
                 case "B":
-                    //Stuur bericht
                     newport = int.Parse(input[1]);
                     int vianb = Data.ndis[newport].getShortestNdis().Key;
                     if (!Data.connections.ContainsKey(newport))
                     {
-                        //stuur door naar dichstbijzijnde buur.
+                        //stuur door naar dichstbijzijnde buur als de doelpoort niet in connections zit
                         try
                         {
                             Console.WriteLine("Bericht voor " + newport + " doorgestuurd naar " + vianb);
                             Data.connections[vianb].Write.WriteLine("B " + newport + " " + rest);
                         }
-                        catch(Exception e)
+                        catch
                         {
-                            //Console.WriteLine(e);
-                            //Console.WriteLine("Tried to forward message " + rest + " to " + newport + " but failed");
+                            //Er is blijkbaar geen neighbour via wie de goal bereikt kan worden
                         }
 
                     }
                     else
                     {
+                        //in dit geval is er sprake van een direct berichtje
                         try
                         {
                             Connection connection = Data.connections[newport];
@@ -122,101 +124,92 @@ namespace NetwProg
                     }
 
                     break;
+                //Maak connection
                 case "C":
-                    //maak connection
                     newport = int.Parse(input[1]);
                     if (!Data.connections.ContainsKey(newport))
                     {
                         Connection newConnection = new Connection(newport);
-                        //DIT HIERONDER KAN TEMP ZIJN NU WE NOG MET C EEN CONNECTION MAKEN
-                        Data.AddNDisEntry(newport, 1, newport);
-                        //Data.ndis[newport].AddPath(newport, 1);
+                        
+                        lock (Data.computelock)
+                        {
+                            Data.AddNDisEntry(newport, 1, newport);
+                        }
                     }
                     break;
+                //Disconnect met een poort
                 case "D":
                     newport = int.Parse(input[1]);
                     try
                     {
+                        //Stuur naar de poort waarmee we disconnecten een bericht dat hij ook met ons moet disconnecten
                         Data.connections[newport].Write.WriteLine("D " + Program.port);
-                        Data.connections.Remove(newport);
-                        //Data.connections[newport].Close();
+                        lock (Data.dummy)
+                        {
+                            //verwijder de buur uit de connections lijst
+                            Data.connections.Remove(newport);
+                        }
+                        //verwijder de poort uit de dis, zodat onze buren op de hoogte gesteld kunnen worden dat wij niet meer direct naar de verwijderde poort kunnen
                         Data.dis.Remove(newport);
-                        Data.RemoveNeighbourFromNDis(newport);
-                        //Data.deleteMessage(newport);
-                        //remove from Ndis
+                        //Verwijder alle paden die via de disconnecte poort gaat
+                        lock (Data.computelock)
+                        {
+                            Data.RemoveNeighbourFromNDis(newport);
+                        }
                         Console.WriteLine("Verbroken: " + newport);
                     }
-                    catch(Exception e)
+                    catch
                     {
-                        Console.WriteLine(e);
                         Console.WriteLine("Poort " + newport + " is niet bekend");
                     }
                     break;
-                    /*
-                case "DEL":
-                    newport = int.Parse(input[1]);
-                    int goal = int.Parse(input[2]);
-                    int newdis = int.Parse(input[3]);
-                    try
-                    {
-                        Data.dis.Remove(newport);
-                        Data.ndis[goal].disViaNb.Remove(newport);
-                        if (Data.ndis[goal].length() == 0)
-                            Data.ndis.Remove(goal);
-                        if (Data.ndis[goal].getShortestNdis().Key == 0)
-                            Data.deleteMessage(newport);
-                        Data.Recompute();
-                    }
-                    catch (Exception e)
-                    {
-                        Console.WriteLine(e);
-                    }
-                    break;
-                    */
+                //Update berichtje
                 case "U":
-                    //Eerst ndis updaten en dan recompute
-                    newport = int.Parse(input[1]); //newport = goal
-                    
-                    for (int i = 2; i < input.Length; i += 2)
+                    newport = int.Parse(input[1]);
+                    lock(Data.computelock)
                     {
-                        int to = int.Parse(input[i]);
-                        int dist = int.Parse(input[i + 1]) + 1;
-                        
-                        if (dist > Data.dis.Count)
+                        for (int i = 2; i < input.Length; i += 2)
                         {
-                            Data.ndis.Remove(to);
-                            if (dist == (Data.dis.Count + 1))
+                            int to = int.Parse(input[i]);
+                            //dist + 1, zodat onze buren de waarde van ons lezen en daar een bij optellen
+                            int dist = int.Parse(input[i + 1]) + 1;
+
+                            //Kijk of een node verwijderd moet worden uit de ndis, want de afstand kan nooit groter zijn dan N + 1
+                            if (dist > Data.dis.Count)
                             {
-                                lock (Data.computelock)
+                                //verwijder de betreffende node uit de ndis
+                                Data.ndis.Remove(to);
+                                //Stuur vervolgens eenmalig een berichtje naar onze neighbours dat wij die betreffende node niet meer kunnen bereiken
+                                if (dist == (Data.dis.Count + 1))
                                 {
-                                    foreach (KeyValuePair<int, Connection> nb in Data.connections)
+                                    lock (Data.computelock)
                                     {
-                                        try
+                                        foreach (KeyValuePair<int, Connection> nb in Data.connections)
                                         {
-                                            nb.Value.Write.WriteLine("U " + Program.port + " " + to + " " + (Data.dis.Count + 1));
-                                        }
-                                        catch
-                                        {
-                                            Console.WriteLine("Send message to neighbour: " + nb.Key + " failed, no direct connection with neighbour");
+                                            try
+                                            {
+                                                nb.Value.Write.WriteLine("U " + Program.port + " " + to + " " + (Data.dis.Count + 1));
+                                            }
+                                            catch
+                                            {
+                                            }
                                         }
                                     }
                                 }
+                                Data.Recompute();
                             }
-                            Data.Recompute();
-                        }
-                        else
-                            Data.AddNDisEntry(to, dist, newport);
-                        //we moeten voor iedere plek waar we de zender van dit bericht als pad hebben kijken of hij nog steeds een pad heeft.
+                            else
+                            {
+                                //Als de distance niet groter is dan de maximale lengte van een pad, behandel het U berichtje
+                                Data.AddNDisEntry(to, dist, newport);
+                                Data.Recompute();
+                            }
+                        }           
                     }
-                    //Data.compareTheirDisWithOurNdis(newport, rest);
-                    //Data.printNdis();
 
-
-                    //Data.cleanNdisWithGivenDis(newport, rest);
-                    //Data.AddNDisEntry(newport, int.Parse(input[2]) + 1, int.Parse(input[3])); //input[3] is via welke neighbour | input[2] is de distance
                     break;
                 default:
-                    //
+                    //Als er een berichtje ontvangen wordt wat we niet kennen, doe niets
                     break;
             }
         }
