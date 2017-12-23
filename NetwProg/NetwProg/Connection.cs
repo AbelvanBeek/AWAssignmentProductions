@@ -139,28 +139,31 @@ namespace NetwProg
                     break;
                 //Disconnect met een poort
                 case "D":
-                    newport = int.Parse(input[1]);
-                    try
+                    lock (Data.computelock)
                     {
-                        //Stuur naar de poort waarmee we disconnecten een bericht dat hij ook met ons moet disconnecten
-                        Data.connections[newport].Write.WriteLine("D " + Program.port);
-                        lock (Data.dummy)
+                        newport = int.Parse(input[1]);
+                        try
                         {
-                            //verwijder de buur uit de connections lijst
-                            Data.connections.Remove(newport);
+                            //Stuur naar de poort waarmee we disconnecten een bericht dat hij ook met ons moet disconnecten
+                            Data.connections[newport].Write.WriteLine("D " + Program.port);
+                            lock (Data.dummy)
+                            {
+                                //verwijder de buur uit de connections lijst
+                                Data.connections.Remove(newport);
+                            }
+                            //verwijder de poort uit de dis, zodat onze buren op de hoogte gesteld kunnen worden dat wij niet meer direct naar de verwijderde poort kunnen
+                            Data.dis.Remove(newport);
+                            //Verwijder alle paden die via de disconnecte poort gaat
+                            lock (Data.computelock)
+                            {
+                                Data.RemoveNeighbourFromNDis(newport);
+                            }
+                            Console.WriteLine("Verbroken: " + newport);
                         }
-                        //verwijder de poort uit de dis, zodat onze buren op de hoogte gesteld kunnen worden dat wij niet meer direct naar de verwijderde poort kunnen
-                        Data.dis.Remove(newport);
-                        //Verwijder alle paden die via de disconnecte poort gaat
-                        lock (Data.computelock)
+                        catch
                         {
-                            Data.RemoveNeighbourFromNDis(newport);
+                            Console.WriteLine("Poort " + newport + " is niet bekend");
                         }
-                        Console.WriteLine("Verbroken: " + newport);
-                    }
-                    catch
-                    {
-                        Console.WriteLine("Poort " + newport + " is niet bekend");
                     }
                     break;
                 //Update berichtje
