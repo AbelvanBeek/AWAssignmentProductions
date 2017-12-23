@@ -146,17 +146,18 @@ namespace NetwProg
                                 Data.connections.Remove(newport);
                             }
                             //verwijder de poort uit de dis, zodat onze buren op de hoogte gesteld kunnen worden dat wij niet meer direct naar de verwijderde poort kunnen
+
                             lock (Data.dislock)
                             {
                                 Data.dis.Remove(newport);
                             }
+
                             //Verwijder alle paden die via de disconnecte poort gaat
                             lock (Data.computelock)
                             {
                                 Data.RemoveNeighbourFromNDis(newport);
                             }
                             Console.WriteLine("Verbroken: " + newport);
-                            
                         }
                         catch
                         {
