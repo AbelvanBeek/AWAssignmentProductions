@@ -73,39 +73,6 @@ namespace Template
 		{
 			for( int s = width * height, p = 0; p < s; p++ ) pixels[p] = c;
 		}
-		public void CopyTo( Surface target, int x = 0, int y = 0 )
-		{
-			int src = 0;
-			int dst = 0;
-			int srcwidth = width;
-			int srcheight = height;
-			int dstwidth = target.width;
-			int dstheight = target.height;
-			if ((srcwidth + x) > dstwidth) srcwidth = dstwidth - x;
-			if ((srcheight + y) > dstheight) srcheight = dstheight - y;
-			if (x < 0) 
-			{
-				src -= x;
-				srcwidth += x;
-				x = 0;
-			}
-			if (y < 0) 
-			{
-				src -= y * width;
-				srcheight += y;
-				y = 0;
-			}
-			if ((srcwidth > 0) && (srcheight > 0))
-			{
-				dst += x + dstwidth * y;
-				for ( int v = 0; v < srcheight; v++ )
-				{
-					for( int u = 0; u < srcwidth; u++ ) target.pixels[dst + u] = pixels[src + u];
-					dst += dstwidth;
-					src += width;
-				}
-			}
-		}
 		public void Box( int x1, int y1, int x2, int y2, int c )
 		{
 			int dest = y1 * width;
@@ -159,12 +126,9 @@ namespace Template
 				}
 			}
 		}
-		public void Plot( int x, int y, int c )
+		public void Plot( uint x, uint y, int c )
 		{
-			if ((x >= 0) && (y >= 0) && (x < width) && (y < height))
-			{
-				pixels[x + y * width] = c;
-			}
+			pixels[x + y * width] = c;
 		}
 		public void Print( string t, int x, int y, int c )
 		{
