@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Cloo;
+using System;
 using System.IO;
 using System.Diagnostics;
 using OpenTK;
@@ -10,10 +11,19 @@ namespace Template {
 
 class Game
 {
-	// screen surface to draw to
-	public Surface screen;
+    // when GLInterop is set to true, the fractal is rendered directly to an OpenGL texture
+    bool GLInterop = false;
+    // load the OpenCL program; this creates the OpenCL context
+    static OpenCLProgram ocl = new OpenCLProgram("../../program.cl");
+    // find the kernel named 'device_function' in the program
+    OpenCLKernel kernel = new OpenCLKernel(ocl, "device_function");
+    // create an OpenGL texture to which OpenCL can send data
+    OpenCLImage<int> image = new OpenCLImage<int>(ocl, 512, 512);
+
+    // screen surface to draw to
+    public Surface screen;
 	// stopwatch
-	Stopwatch timer = new Stopwatch();
+	Stopwatch timer;
 	int generation = 0;
 	// two buffers for the pattern: simulate reads 'second', writes to 'pattern'
 	uint [] pattern;
@@ -51,7 +61,8 @@ class Game
 	// minimalistic .rle file reader for Golly files (see http://golly.sourceforge.net)
 	public void Init()
 	{
-		StreamReader sr = new StreamReader( "../../data/turing_js_r.rle" );
+        timer = new Stopwatch();
+        StreamReader sr = new StreamReader( "../../data/turing_js_r.rle" );
 		uint state = 0, n = 0, x = 0, y = 0;
 		while (true)
 		{
@@ -114,7 +125,30 @@ class Game
 			if (GetBit( x + xoffset, y + yoffset ) == 1) screen.Plot( x, y, 0xffffff );
 		// report performance
 		Console.WriteLine( "generation " + generation++ + ": " + timer.ElapsedMilliseconds + "ms" );
-	}
-}
+
+        // do random OCL stuff
+        GL.Finish();
+        kernel.SetArgument(0, image);
+        // execute kernel
+        long[] workSize = { 512, 512 };
+        long[] localSize = { 32, 4 };
+        kernel.LockOpenGLObject(image.texBuffer);
+        kernel.Execute(workSize, localSize);
+        kernel.UnlockOpenGLObject(image.texBuffer);
+        }
+
+    public void Render()
+    {
+        // use OpenGL to draw a quad using the texture that was filled by OpenCL
+        GL.LoadIdentity();
+        GL.BindTexture(TextureTarget.Texture2D, image.OpenGLTextureID);
+        GL.Begin(PrimitiveType.Quads);
+        GL.TexCoord2(0.0f, 1.0f); GL.Vertex2(-1.0f, -1.0f);
+        GL.TexCoord2(1.0f, 1.0f); GL.Vertex2(1.0f, -1.0f);
+        GL.TexCoord2(1.0f, 0.0f); GL.Vertex2(1.0f, 1.0f);
+        GL.TexCoord2(0.0f, 0.0f); GL.Vertex2(-1.0f, 1.0f);
+        GL.End();
+    }
+    }
 
 } // namespace Template
