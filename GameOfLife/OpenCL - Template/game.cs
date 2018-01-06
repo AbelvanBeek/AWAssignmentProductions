@@ -12,7 +12,7 @@ namespace Template {
 class Game
 {
 	// when GLInterop is set to true, the fractal is rendered directly to an OpenGL texture
-	bool GLInterop = false;
+	bool GLInterop = true;
 	// load the OpenCL program; this creates the OpenCL context
 	static OpenCLProgram ocl = new OpenCLProgram( "../../program.cl" );
 	// find the kernel named 'device_function' in the program
