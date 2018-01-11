@@ -19,6 +19,8 @@ class Game
     OpenCLKernel kernel = new OpenCLKernel(ocl, "device_function");
     // create an OpenGL texture to which OpenCL can send data
     OpenCLImage<int> image = new OpenCLImage<int>(ocl, 512, 512);
+    OpenCLBuffer<uint> patternBuffer;
+    OpenCLBuffer<uint> secondBuffer;
 
     // screen surface to draw to
     public Surface screen;
@@ -76,6 +78,7 @@ class Game
 				ph = UInt32.Parse( sub[3] );
 				pattern = new uint[pw * ph];
 				second = new uint[pw * ph];
+
 			}
 			else while (pos < line.Length)
 			{
@@ -91,6 +94,11 @@ class Game
 		}
 		// swap buffers
 		for( int i = 0; i < pw * ph; i++ ) second[i] = pattern[i];
+
+        //Initialize buffers
+        patternBuffer = new OpenCLBuffer<uint>(ocl, pattern);
+        secondBuffer = new OpenCLBuffer<uint>(ocl, second);
+
 	}
 	// SIMULATE
 	// Takes the pattern in array 'second', and applies the rules of Game of Life to produce the next state
@@ -129,8 +137,13 @@ class Game
         // do random OCL stuff
         GL.Finish();
         kernel.SetArgument(0, image);
+            
+        kernel.SetArgument(1, pw);
+        kernel.SetArgument(2, ph);
+        kernel.SetArgument(3, patternBuffer);
+        kernel.SetArgument(4, secondBuffer);
         // execute kernel
-        long[] workSize = { 512, 512 };
+        long[] workSize = { 512,512 };
         long[] localSize = { 32, 4 };
         kernel.LockOpenGLObject(image.texBuffer);
         kernel.Execute(workSize, localSize);
