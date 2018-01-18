@@ -17,6 +17,7 @@ class Game
     static OpenCLProgram ocl = new OpenCLProgram("../../program.cl");
     // find the kernel named 'device_function' in the program
     OpenCLKernel kernel = new OpenCLKernel(ocl, "device_function");
+    OpenCLKernel clearKernel = new OpenCLKernel(ocl, "clear_function");
     // create an OpenGL texture to which OpenCL can send data
     OpenCLImage<int> image = new OpenCLImage<int>(ocl, 512, 512);
     OpenCLBuffer<uint> patternBuffer;
@@ -76,6 +77,7 @@ class Game
 				String[] sub = line.Split( new char[] { '=',',' }, StringSplitOptions.RemoveEmptyEntries );
 				pw = (UInt32.Parse( sub[1] ) + 31) / 32;
 				ph = UInt32.Parse( sub[3] );
+                Console.WriteLine(pw + " " + ph);
 				pattern = new uint[pw * ph];
 				second = new uint[pw * ph];
 
@@ -95,9 +97,20 @@ class Game
 		// swap buffers
 		for( int i = 0; i < pw * ph; i++ ) second[i] = pattern[i];
 
-        //Initialize buffers
+        //    //Initialize buffers
+        //    for (int i = 0; i < pw * ph; i++)
+        //    {
+        //        second[i] = 0;
+        //        pattern[i] = 0;
+        //    }
+        //for(int i = 0; i < 10; i++)
+        //    {
+        //        second[i] = 1;
+        //        pattern[i] = 1;
+        //    }
         patternBuffer = new OpenCLBuffer<uint>(ocl, pattern);
         secondBuffer = new OpenCLBuffer<uint>(ocl, second);
+        
 
 	}
 	// SIMULATE
@@ -126,18 +139,20 @@ class Game
 		// start timer
 		timer.Restart();
 		// run the simulation, 1 step
-		Simulate();
-		// visualize current state
-		screen.Clear( 0 );
-		for( uint y = 0; y < screen.height; y++ ) for( uint x = 0; x < screen.width; x++ )
-			if (GetBit( x + xoffset, y + yoffset ) == 1) screen.Plot( x, y, 0xffffff );
+		//Simulate();
+        //patternBuffer = new OpenCLBuffer<uint>(ocl, pattern);
+        //secondBuffer = new OpenCLBuffer<uint>(ocl, second);
+            // visualize current state
+            screen.Clear( 0 );
+		//for( uint y = 0; y < screen.height; y++ ) for( uint x = 0; x < screen.width; x++ )
+		//	if (GetBit( x + xoffset, y + yoffset ) == 1) screen.Plot( x, y, 0xffffff );
 		// report performance
 		Console.WriteLine( "generation " + generation++ + ": " + timer.ElapsedMilliseconds + "ms" );
 
         // do random OCL stuff
         GL.Finish();
+        clearKernel.SetArgument(0, image);
         kernel.SetArgument(0, image);
-            
         kernel.SetArgument(1, pw);
         kernel.SetArgument(2, ph);
         kernel.SetArgument(3, patternBuffer);
@@ -146,11 +161,14 @@ class Game
         long[] workSize = { 512,512 };
         long[] localSize = { 32, 4 };
         kernel.LockOpenGLObject(image.texBuffer);
+        clearKernel.Execute(workSize, null);
         kernel.Execute(workSize, localSize);
         kernel.UnlockOpenGLObject(image.texBuffer);
+
         }
 
-    public void Render()
+
+        public void Render()
     {
         // use OpenGL to draw a quad using the texture that was filled by OpenCL
         GL.LoadIdentity();
