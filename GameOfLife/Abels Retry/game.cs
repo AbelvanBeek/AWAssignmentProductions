@@ -38,6 +38,7 @@ class Game
     void BitSet(uint x, uint y) { pattern[y * pw + (x >> 5)] |= 1U << (int)(x & 31); }
     bool lastLButtonState = false;
     int dragXStart, dragYStart, offsetXStart, offsetYStart;
+    long[] workSize, localSize, arraySizeExpanded, arraySizeCompressed;
     public void SetMouseState(int x, int y, bool pressed)
     {
         if (pressed)
@@ -91,41 +92,41 @@ class Game
                 }
         }
             // swap buffers
-        for (int i = 0; i < pw * ph; i++) { second[i] = pattern[i]; }
+        for (int i = 0; i < pw * ph; i++) { second[i] = pattern[i]; pattern[i] = 0; }
 
         secondBuffer = new OpenCLBuffer<uint>(ocl, second);
         patternBuffer = new OpenCLBuffer<uint>(ocl, pattern);
-    }
 
-	public void Tick()
-	{ 
-        timer.Restart();
-        GL.Finish();
-		// clear the screen
-		//screen.Clear( 0 );
-        // do opencl stuff
-        clearKernel.SetArgument( 0, image );
+        clearKernel.SetArgument(0, image);
 
-        simulateKernel.SetArgument(0, secondBuffer );
+        simulateKernel.SetArgument(0, secondBuffer);
         simulateKernel.SetArgument(1, patternBuffer);
         simulateKernel.SetArgument(2, pw);
         simulateKernel.SetArgument(3, ph);
 
         copyKernel.SetArgument(0, secondBuffer);
         copyKernel.SetArgument(1, patternBuffer);
+        copyKernel.SetArgument(2, pw);
 
-        kernel.SetArgument( 0, image );
-        kernel.SetArgument( 1, pw );
-        kernel.SetArgument( 2, xoffset );
-        kernel.SetArgument( 3, yoffset );
-        kernel.SetArgument( 4, secondBuffer );
-		kernel.SetArgument( 5, patternBuffer );
+        kernel.SetArgument(0, image);
+        kernel.SetArgument(1, pw);
+        kernel.SetArgument(4, secondBuffer);
+        kernel.SetArgument(5, patternBuffer);
 
-        // execute kernel
-		long [] workSize = { 512, 512 };
-		long [] localSize = { 32, 4 };
-        long [] arraySizeExpanded = { pw * 32, ph }; //54 * 32 * 1647
-        long [] arraySizeCompressed = { pw, ph }; //54 * 1647
+        workSize = new long[]{ 512, 512 };
+        localSize = new long[] { 32, 4 };
+        arraySizeExpanded = new long[] { pw * 32, ph }; //54 * 32 * 1647
+        arraySizeCompressed = new long[] { pw, ph }; //54 * 1647
+    }
+
+	public void Tick()
+	{ 
+        timer.Restart();
+        GL.Finish();
+
+        // scroll parameters
+        kernel.SetArgument(2, xoffset);
+        kernel.SetArgument(3, yoffset);
 
         // INTEROP PATH:
         // lock the OpenGL texture for use by OpenCL
@@ -142,6 +143,7 @@ class Game
         Console.WriteLine("generation " + generation++ + ": " + timer.ElapsedMilliseconds + "ms");
         
     }
+
 	public void Render() 
 	{
 		// use OpenGL to draw a quad using the texture that was filled by OpenCL
