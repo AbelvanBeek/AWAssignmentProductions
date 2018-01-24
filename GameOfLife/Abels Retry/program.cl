@@ -1,5 +1,5 @@
 // helper function for setting one bit in the pattern buffer
-void BitSet( uint x, uint y, uint pw, global uint *pattern ) { pattern[y * pw + (x >> 5)] |= 1U << (int)(x & 31); }
+void BitSet( uint x, uint y, uint pw, __global uint *pattern ) { atomic_or(&pattern[y * pw + (x >> 5)], 1U << (uint)(x & 31)); }
 
 void TestBitSet(uint x, uint y, uint pw, global uint *pattern)
 {
@@ -16,16 +16,16 @@ __kernel void simulate_function( global uint *second, global uint *pattern, uint
 {
 	int idx = get_global_id( 0 );
 	int idy = get_global_id( 1 );
-	int id = idx + ph * idy;
+	int id = idx + 1714 * idy;
 	//if (id >= (pw * 32 * ph)) return;
 
-	int x = id % ph;
-	int y = id / ph;
+	int x = idx;
+	int y = idy;
 
 	//if (x < 5 || x > 507 || y < 5 || y > 507) return;
 
 	//uint w = pw * 32, h = ph;
-	if (x < 1 || x > 1646 || y < 1 || y > 1646) return;
+	if (x < 1 || y < 1 ) return;
 	// count active neighbors
 	uint n = GetBit( x - 1, y - 1, pw, second ) + GetBit( x, y - 1, pw, second ) + GetBit( x + 1, y - 1, pw, second ) + GetBit( x - 1, y, pw, second ) + 
 				GetBit( x + 1, y, pw, second ) + GetBit( x - 1, y + 1, pw, second ) + GetBit( x, y + 1, pw, second ) + GetBit( x + 1, y + 1, pw, second );
@@ -36,11 +36,10 @@ __kernel void simulate_function( global uint *second, global uint *pattern, uint
 __kernel void copy_function( global uint *second, global uint *pattern )
 {	
 	int idx = get_global_id( 0 );
-	int idy = get_global_id( 1 );
-	int id = idx + 54 * idy;
-	if (id >= (54 * 1647)) return;
-	second[id] = pattern[id];
-	pattern[id] = 0;
+	//int idy = get_global_id( 1 );
+	//int id = idx + 54 * idy;
+	second[idx] = pattern[idx];
+	pattern[idx] = 0;
 }
 
 __kernel void show_function( write_only image2d_t a, uint pw, uint xoffset, uint yoffset, global uint *second, global uint *pattern )

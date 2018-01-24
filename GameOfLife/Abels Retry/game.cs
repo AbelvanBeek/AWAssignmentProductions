@@ -7,6 +7,7 @@ using Cloo;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
 using System.IO;
+using System.Threading;
 
 namespace Template {
 
@@ -125,7 +126,7 @@ class Game
 		long [] workSize = { 512, 512 };
 		long [] localSize = { 32, 4 };
         long [] arraySizeExpanded = { pw * 32, ph }; //54 * 32 * 1647
-        long [] arraySizeCompressed = { pw, ph }; //54 * 1647
+        long [] arraySizeCompressed = { pattern.Length }; //54 * 1647
 
         // INTEROP PATH:
         // lock the OpenGL texture for use by OpenCL
@@ -136,6 +137,7 @@ class Game
         simulateKernel.Execute(arraySizeExpanded, null);
         copyKernel.Execute(arraySizeCompressed, null);
         kernel.Execute( workSize, localSize );
+            //Thread.Sleep(200);
 
 		// unlock the OpenGL texture so it can be used for drawing a quad
 		kernel.UnlockOpenGLObject( image.texBuffer );
