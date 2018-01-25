@@ -35,7 +35,7 @@ class Game
     uint[] second;
     uint pw, ph; // note: pw is in uints; width in bits is 32 this value.
     uint xoffset = 0, yoffset = 0;
-    float zoom = 0.3f;
+    float zoom = 1f;
     // helper function for setting one bit in the pattern buffer
     void BitSet(uint x, uint y) { pattern[y * pw + (x >> 5)] |= 1U << (int)(x & 31); }
     bool lastLButtonState = false;
@@ -64,10 +64,18 @@ class Game
     }
         public void Zoom(bool inzoom, bool outzoom)
         {
-            if (inzoom && zoom < 5)
-                zoom += 0.1f;
-            if (outzoom && zoom > 0.31)
-                zoom -= 0.1f;
+            if (inzoom)
+            {
+                zoom = Math.Min(5, zoom + 0.1f); //xoffset = 0; yoffset = 0;
+            }
+            if (outzoom)
+            {
+                zoom = Math.Max(0.3f, zoom - 0.1f);
+                //semifix voor uitzoom bug
+                xoffset = (uint)Math.Max(0, 0 + pw * 32 * (zoom - 0.3));
+                yoffset = (uint) Math.Min(0, 0 + ph * (zoom - 0.3));
+            }
+
         }
 
     public void Init()
@@ -144,15 +152,14 @@ class Game
         kernel.LockOpenGLObject( image.texBuffer );
 
         // execute the kernels
-        clearKernel.Execute(workSize, localSize);
+        //clearKernel.Execute(workSize, localSize);
         simulateKernel.Execute(arraySizeExpanded, null);
         copyKernel.Execute(arraySizeCompressed, null);
         kernel.Execute( workSize, localSize );
 
 		// unlock the OpenGL texture so it can be used for drawing a quad
 		kernel.UnlockOpenGLObject( image.texBuffer );
-       // Console.WriteLine("generation " + generation++ + ": " + timer.Elapsed.TotalMilliseconds + "ms");
-       //Thread.Sleep(50)
+        Console.WriteLine("generation " + generation++ + ": " + timer.Elapsed.TotalMilliseconds + "ms");
         
     }
 
