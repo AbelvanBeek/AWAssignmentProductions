@@ -29,7 +29,7 @@ __kernel void copy_function( global uint *second, global uint *pattern, uint pw 
 	pattern[id] = 0;
 }
 
-__kernel void show_function( write_only image2d_t a, uint pw, uint xoffset, uint yoffset, global uint *second, global uint *pattern )
+__kernel void show_function( write_only image2d_t a, uint pw, uint xoffset, uint yoffset, global uint *second, global uint *pattern, float zoom )
 {
 	int idx = get_global_id( 0 );
 	int idy = get_global_id( 1 );
@@ -37,8 +37,7 @@ __kernel void show_function( write_only image2d_t a, uint pw, uint xoffset, uint
 
 	int x = id % 512;
 	int y = id / 512;
-
-	write_imagef( a, (int2)(x, y), GetBit(x + xoffset, y + yoffset, pw, second) );
+	write_imagef( a, (int2)(x, y), GetBit((uint)((float)(x + xoffset) / zoom),(uint)((float)(y + yoffset) / zoom), pw, second) );
 
 }
 

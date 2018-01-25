@@ -74,6 +74,7 @@ namespace Template
             var mouse = OpenTK.Input.Mouse.GetState();
             Point p = CursorPosition.GetCursorPosition();
             game.SetMouseState(p.X, p.Y, mouse.LeftButton == ButtonState.Pressed);
+            game.Zoom(keyboard[OpenTK.Input.Key.Up], keyboard[OpenTK.Input.Key.Down]);
         }
 		protected override void OnRenderFrame( FrameEventArgs e )
 		{

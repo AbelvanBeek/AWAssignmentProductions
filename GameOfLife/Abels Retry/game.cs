@@ -7,6 +7,7 @@ using Cloo;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
 using System.IO;
+using System.Threading;
 
 namespace Template {
 
@@ -34,6 +35,7 @@ class Game
     uint[] second;
     uint pw, ph; // note: pw is in uints; width in bits is 32 this value.
     uint xoffset = 0, yoffset = 0;
+    float zoom = 0.3f;
     // helper function for setting one bit in the pattern buffer
     void BitSet(uint x, uint y) { pattern[y * pw + (x >> 5)] |= 1U << (int)(x & 31); }
     bool lastLButtonState = false;
@@ -46,8 +48,8 @@ class Game
             if (lastLButtonState)
             {
                 int deltax = x - dragXStart, deltay = y - dragYStart;
-                xoffset = (uint)Math.Min(pw * 32 - screen.width, Math.Max(0, offsetXStart - deltax));
-                yoffset = (uint)Math.Min(ph - screen.height, Math.Max(0, offsetYStart - deltay));
+                xoffset = (uint)Math.Min(Math.Max(0, 0 + pw*32 * (zoom -0.3)), Math.Max(0, offsetXStart - deltax));
+                yoffset = (uint)Math.Min(Math.Max(0, 0 + ph * (zoom -0.3)), Math.Max(0, offsetYStart - deltay));
             }
             else
             {
@@ -60,6 +62,13 @@ class Game
         }
         else lastLButtonState = false;
     }
+        public void Zoom(bool inzoom, bool outzoom)
+        {
+            if (inzoom && zoom < 5)
+                zoom += 0.1f;
+            if (outzoom && zoom > 0.31)
+                zoom -= 0.1f;
+        }
 
     public void Init()
 	{
@@ -120,13 +129,15 @@ class Game
     }
 
 	public void Tick()
-	{ 
+	{
+        
         timer.Restart();
         GL.Finish();
 
         // scroll parameters
-        kernel.SetArgument(2, xoffset);
-        kernel.SetArgument(3, yoffset);
+        kernel.SetArgument(2, (uint)xoffset); //512 als zoom 1 is en richting 0 als zoom laag wordt
+        kernel.SetArgument(3, (uint)yoffset);
+            kernel.SetArgument(6, zoom);
 
         // INTEROP PATH:
         // lock the OpenGL texture for use by OpenCL
@@ -140,7 +151,8 @@ class Game
 
 		// unlock the OpenGL texture so it can be used for drawing a quad
 		kernel.UnlockOpenGLObject( image.texBuffer );
-        Console.WriteLine("generation " + generation++ + ": " + timer.ElapsedMilliseconds + "ms");
+       // Console.WriteLine("generation " + generation++ + ": " + timer.Elapsed.TotalMilliseconds + "ms");
+       //Thread.Sleep(50)
         
     }
 
