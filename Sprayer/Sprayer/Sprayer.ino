@@ -76,14 +76,14 @@ void startSpray(){
   //remember when we started spraying
   currentTime = millis();
   //start spraying
-  digitalWrite(toiletFreshenerPin, HIGH)
+  digitalWrite(toiletFreshenerPin, HIGH);
 }
 void checkStopSpray(){
   //check if we've sprayed long enough
   if ((millis() - currentTime) > sprayTime)
   {
     //if so, stop spraying
-    digitalWrite(toiletFreshenerPin, LOW)
+    digitalWrite(toiletFreshenerPin, LOW);
   }
 }
 void setup() {

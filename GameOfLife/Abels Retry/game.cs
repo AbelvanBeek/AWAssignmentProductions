@@ -35,7 +35,6 @@ class Game
     uint[] second;
     uint pw, ph; // note: pw is in uints; width in bits is 32 this value.
     uint xoffset = 0, yoffset = 0;
-    float zoom = 1f;
     // helper function for setting one bit in the pattern buffer
     void BitSet(uint x, uint y) { pattern[y * pw + (x >> 5)] |= 1U << (int)(x & 31); }
     bool lastLButtonState = false;
@@ -129,23 +128,14 @@ class Game
         kernel.SetArgument(1, pw);
         kernel.SetArgument(4, secondBuffer);
         kernel.SetArgument(5, patternBuffer);
+        kernel.SetArgument( 4, secondBuffer );
+		kernel.SetArgument( 5, patternBuffer );
 
-        workSize = new long[]{ 512, 512 };
-        localSize = new long[] { 32, 4 };
-        arraySizeExpanded = new long[] { pw * 32, ph }; //54 * 32 * 1647
-        arraySizeCompressed = new long[] { pw, ph }; //54 * 1647
-    }
-
-	public void Tick()
-	{
-        
-        timer.Restart();
-        GL.Finish();
-
-        // scroll parameters
-        kernel.SetArgument(2, (uint)xoffset); //512 als zoom 1 is en richting 0 als zoom laag wordt
-        kernel.SetArgument(3, (uint)yoffset);
-            kernel.SetArgument(6, zoom);
+        // execute kernel
+		long [] workSize = { 512, 512 };
+		long [] localSize = { 32, 4 };
+        long [] arraySizeExpanded = { pw * 32, ph }; //54 * 32 * 1647
+        long [] arraySizeCompressed = { pattern.Length }; //54 * 1647
 
         // INTEROP PATH:
         // lock the OpenGL texture for use by OpenCL
@@ -156,6 +146,7 @@ class Game
         simulateKernel.Execute(arraySizeExpanded, null);
         copyKernel.Execute(arraySizeCompressed, null);
         kernel.Execute( workSize, localSize );
+            //Thread.Sleep(200);
 
 		// unlock the OpenGL texture so it can be used for drawing a quad
 		kernel.UnlockOpenGLObject( image.texBuffer );
